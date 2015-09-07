@@ -5,15 +5,18 @@
  */
 package QuantIF_Project.gui;
 
-import Quantif_project.exceptions.BadParametersException;
-import Quantif_project.patient.DicomImage;
-import Quantif_project.patient.Patient;
+import QuantIF_Project.patient.DicomImage;
+import QuantIF_Project.patient.Patient;
+import QuantIF_Project.patient.exceptions.BadParametersException;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
+import java.awt.image.DataBufferByte;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+
+
+
 
 /**
  *
@@ -73,22 +76,11 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        imageJFrame = new javax.swing.JFrame();
         nextButton = new javax.swing.JButton();
         prevButton = new javax.swing.JButton();
         imageSlider = new javax.swing.JSlider();
         imageIDTextField = new javax.swing.JTextField();
-
-        javax.swing.GroupLayout imageJFrameLayout = new javax.swing.GroupLayout(imageJFrame.getContentPane());
-        imageJFrame.getContentPane().setLayout(imageJFrameLayout);
-        imageJFrameLayout.setHorizontalGroup(
-            imageJFrameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        imageJFrameLayout.setVerticalGroup(
-            imageJFrameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
+        imageLabel = new javax.swing.JLabel();
 
         setClosable(true);
         setIconifiable(true);
@@ -127,25 +119,25 @@ public class AfficherImages extends javax.swing.JInternalFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(imageSlider, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(prevButton, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 352, Short.MAX_VALUE)
-                .addComponent(nextButton, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE))
-            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(imageIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(prevButton, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(imageLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 344, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(nextButton, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(117, 117, 117)
-                        .addComponent(nextButton, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap(129, Short.MAX_VALUE)
-                        .addComponent(prevButton, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 25, Short.MAX_VALUE)
+                    .addComponent(prevButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(nextButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(imageLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
                 .addComponent(imageIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(imageSlider, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -204,13 +196,27 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         DicomImage dcm = this.patient.getDicomImage(imageID);
         
         BufferedImage bufferedImage = dcm.getBufferedImage();
-        int[] pixels =  ((DataBufferInt) bufferedImage.getRaster().getDataBuffer()).getData();
+        byte[] pixels =  ((DataBufferByte) bufferedImage.getRaster().getDataBuffer()).getData();
         //System.out.println(Arrays.toString(pixels));
-        
-        imageJFrame.getContentPane().add(new JLabel(new ImageIcon(bufferedImage)));
+        imageLabel.setIcon(new ImageIcon(bufferedImage));
         //imageLabel.setIcon(icon);
         imageIDTextField.setText(imageID + " / " + this.nbImages);
-        imageJFrame.setVisible(true);
+       
+        System.out.println(Arrays.toString(pixels));
+        
+        int width = bufferedImage.getWidth();
+        int height = bufferedImage.getHeight();
+        
+        for (int i = 0; i < width; i++) {
+            for (int j=0; j < height; j++) {
+                int rgb = bufferedImage.getRGB(j, i);
+                int r = (rgb >> 16) & 0xFF;
+                int g = (rgb >> 8) & 0xFF;
+                int b = (rgb & 0xFF);
+                int gray = (r + g + b) / 3;
+                System.out.println(i + " x " + j + " : " + gray);
+            }
+        }
         
         
     }
@@ -222,7 +228,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField imageIDTextField;
-    private javax.swing.JFrame imageJFrame;
+    private javax.swing.JLabel imageLabel;
     private javax.swing.JSlider imageSlider;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;

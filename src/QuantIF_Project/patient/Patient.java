@@ -1,8 +1,8 @@
-package Quantif_project.patient;
+package QuantIF_Project.patient;
 
-import Quantif_project.exceptions.BadParametersException;
-import Quantif_project.exceptions.DicomFilesNotFoundException;
-import Quantif_project.exceptions.NotDirectoryException;
+import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
+import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;

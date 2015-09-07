@@ -1,4 +1,4 @@
-package Quantif_project.exceptions;
+package QuantIF_Project.patient.exceptions;
 
 
 public class DicomFilesNotFoundException extends Exception {

@@ -1,8 +1,6 @@
-import Quantif_project.exceptions.BadParametersException;
-import Quantif_project.exceptions.DicomFilesNotFoundException;
-import Quantif_project.exceptions.NotDirectoryException;
-import Quantif_project.patient.DicomImage;
-import Quantif_project.patient.Patient;
+import QuantIF_Project.patient.DicomImage;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 
 public class Test {
 
@@ -13,29 +11,21 @@ public class Test {
 		/**
 		 * Dossier contenant toutes les images .dcm d'un patient
 		 */
-		String path = "C:\\Users\\Cyriac\\Google Drive\\QuantIF_Project\\TEPFDG_initiale_Linque";
-		//String path = "C:\\Users\\Cyriac\\Google Drive\\sms.xsl";
-		Patient p = null;
-		try {
-			p = new Patient(path);
-		} catch (NotDirectoryException | DicomFilesNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (BadParametersException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		String path = "C:\\Users\\kamelya\\Documents\\TEPFDG_initiale_Linque\\TEP_FDG_Linque_anom_1.dcm";
 		
-		System.out.println(p);
-		
-		DicomImage dcm;
-		try {
-			dcm = p.getDicomImage(150);
-			System.out.println(dcm.getImageIndex());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		DicomImage dcm = new DicomImage(path);
+                BufferedImage buff = dcm.getBufferedImage();
+                
+                int width = buff.getWidth();
+                int height = buff.getHeight();
+                byte[] dstBuff = ((DataBufferByte) buff.getRaster().getDataBuffer()).getData();
+                
+                for (int i=0; i<width/2; i++) {
+                    for (int j=0; j<width/2; j++) {
+                        System.out.println(dstBuff[i+j*width] & 0xFF);
+                    }
+                  
+                }
 		
 		
 	

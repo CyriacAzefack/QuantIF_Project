@@ -1,5 +1,5 @@
-package Quantif_project.patient;
-import Quantif_project.exceptions.BadParametersException;
+package QuantIF_Project.patient;
+import QuantIF_Project.patient.exceptions.BadParametersException;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -115,7 +115,7 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
 	public BufferedImage getBufferedImage() {
             Image image = this.getImage();
             BufferedImage buffImg = new BufferedImage(image.getWidth(null), image.getHeight(null),
-        BufferedImage.TYPE_INT_RGB);
+        BufferedImage.TYPE_BYTE_GRAY);
             
             return buffImg;            
         }

@@ -1,4 +1,4 @@
-package Quantif_project.patient;
+package QuantIF_Project.patientsss;
 /**
  * 
  * @author Cyriac
@@ -6,12 +6,12 @@ package Quantif_project.patient;
  */
 public class DicomInfo {
 	/**
-	 * Etiquette de l'info formé de 2 nombre de 4 chiffres : 0028, 1051 
+	 * Etiquette de l'info formï¿½ de 2 nombre de 4 chiffres : 0028, 1051 
 	 */
 	private String tag[];
 	
 	/**
-	 * Clé de l'info
+	 * Clï¿½ de l'info
 	 */
 	private String key;
 	
@@ -27,16 +27,16 @@ public class DicomInfo {
 	private static final int TAILLE_MIN_STRING = 10; // les 8 premiers chiffres, la ',' et le ':' au moins
 	
 	/**
-	 * Crée une instance de DicomInfo
+	 * Crï¿½e une instance de DicomInfo
 	 * @param tag
 	 * @param key
 	 * @param value
 	 * @throws Exception
-	 * 		Exception levée quand l'étiquette de l'info n'a pas exactement 2 valeurs
+	 * 		Exception leve quand l'ï¿½tiquette de l'info n'a pas exactement 2 valeurs
 	 */
 	public DicomInfo (String tag[], String key, String value) throws Exception {
 		if (tag.length != 2) {
-			throw new Exception("L'étiquette doit être composé de deux valeurs!!");
+			throw new Exception("L'ï¿½tiquette doit ï¿½tre composï¿½ de deux valeurs!!");
 		}
 		
 		this.tag = tag;
@@ -48,16 +48,16 @@ public class DicomInfo {
 	}
 	
 	/**
-	 * Crée une instance de DicomInfo à l'aide d'un string de la forme
+	 * Crï¿½e une instance de DicomInfo ï¿½ l'aide d'un string de la forme
 	 * info = '0028,1051  Window Width: 13228'
 	 * @param info
 	 * @throws Exception 
-	 * 		Exeption levée quand la taille du string d'info est inférieur à la taille minimale
+	 * 		Exeption levï¿½e quand la taille du string d'info est infï¿½rieur ï¿½ la taille minimale
 	 */
 	public DicomInfo(String info) throws Exception {
-		if (info.length() < TAILLE_MIN_STRING) { //Si la chaîne n'est pas assez longue
-			throw new Exception("Le string pour créer une DicomInfo est trop court : "
-					+ "Au moins " + TAILLE_MIN_STRING + " caractères!!");
+		if (info.length() < TAILLE_MIN_STRING) { //Si la chaï¿½ne n'est pas assez longue
+			throw new Exception("Le string pour crï¿½er une DicomInfo est trop court : "
+					+ "Au moins " + TAILLE_MIN_STRING + " caractï¿½res!!");
 		}
 		String splitStr[] = splitInfo(info);
 		this.tag = new String[2];
@@ -69,7 +69,7 @@ public class DicomInfo {
 	
 	public String toString() {
 		String str = "Etiquette : ("+tag[0]+","+tag[1]+")";
-		str += " Clé : "+key;
+		str += " Clï¿½ : "+key;
 		str += " Valeur : "+value;
 		
 		return str;
@@ -85,7 +85,7 @@ public class DicomInfo {
 	}
 	
 	/**
-	 * Découpe le long string d'information en 4 paramètres et les range dans un
+	 * Dï¿½coupe le long string d'information en 4 paramï¿½tres et les range dans un
 	 * tableau de string comme suit :
 	 * - str[0] = tag[0]
 	 * - str[1] = tag[1]
@@ -97,13 +97,13 @@ public class DicomInfo {
 	private String[] splitInfo(String infoString) {
 		String[] str = new String[4];
 		
-		//On récupère les octets 0:4 de infoString
+		//On rï¿½cupï¿½re les octets 0:4 de infoString
 		str[0] = infoString.substring(0,4);
 		
-		//On récupère les octets 5:9 de infoString
+		//On rï¿½cupï¿½re les octets 5:9 de infoString
 		str[1] = infoString.substring(5,9);
 		
-		//On récupère ce qui reste
+		//On rï¿½cupï¿½re ce qui reste
 		String rest = infoString.substring(11);
 		
 		//On split par rapport au ":"

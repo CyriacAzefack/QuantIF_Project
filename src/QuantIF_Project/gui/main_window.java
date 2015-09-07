@@ -5,14 +5,17 @@
  */
 package QuantIF_Project.gui;
 
-import Quantif_project.exceptions.BadParametersException;
-import Quantif_project.exceptions.DicomFilesNotFoundException;
-import Quantif_project.exceptions.NotDirectoryException;
-import Quantif_project.patient.Patient;
+
+import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
+import QuantIF_Project.patient.exceptions.NotDirectoryException;
+import QuantIF_Project.patient.Patient;
 import java.io.File;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+
+
 
 /**
  *
