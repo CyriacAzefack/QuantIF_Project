@@ -1,0 +1,37 @@
+﻿
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+# Changes to be committed:
+#	new file:   build/classes/.netbeans_automatic_build
+#	new file:   build/classes/.netbeans_update_resources
+#	new file:   build/classes/QuantIF_Project/exceptions/BadParametersException.class
+#	new file:   build/classes/QuantIF_Project/exceptions/DicomFilesNotFoundException.class
+#	new file:   build/classes/QuantIF_Project/exceptions/NotDirectoryException.class
+#	new file:   build/classes/QuantIF_Project/gui/AfficherImages$1.class
+#	new file:   build/classes/QuantIF_Project/gui/AfficherImages$2.class
+#	new file:   build/classes/QuantIF_Project/gui/AfficherImages$3.class
+#	new file:   build/classes/QuantIF_Project/gui/AfficherImages.class
+#	new file:   build/classes/QuantIF_Project/gui/AfficherImages.form
+#	new file:   build/classes/QuantIF_Project/gui/main_window$1.class
+#	new file:   build/classes/QuantIF_Project/gui/main_window$2.class
+#	new file:   build/classes/QuantIF_Project/gui/main_window$3.class
+#	new file:   build/classes/QuantIF_Project/gui/main_window$4.class
+#	new file:   build/classes/QuantIF_Project/gui/main_window$5.class
+#	new file:   build/classes/QuantIF_Project/gui/main_window.class
+#	new file:   build/classes/QuantIF_Project/gui/main_window.form
+#	new file:   build/classes/QuantIF_Project/patient/DicomImage.class
+#	new file:   build/classes/QuantIF_Project/patient/DicomImage.rs
+#	new file:   build/classes/QuantIF_Project/patient/DicomInfo.class
+#	new file:   build/classes/QuantIF_Project/patient/DicomInfo.rs
+#	new file:   build/classes/QuantIF_Project/patient/Patient.class
+#	new file:   build/classes/QuantIF_Project/patient/Patient.rs
+#	new file:   build/classes/QuantIF_Project/patient/exceptions/BadParametersException.rs
+#	new file:   build/classes/QuantIF_Project/patient/exceptions/DicomFilesNotFoundException.rs
+#	new file:   build/classes/QuantIF_Project/patient/exceptions/NotDirectoryException.rs
+#	new file:   build/classes/Test.class
+#	new file:   nbproject/private/config.properties
+#	new file:   nbproject/private/private.properties
+#	new file:   nbproject/private/private.xml
+#
+
