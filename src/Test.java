@@ -1,35 +1,105 @@
 import QuantIF_Project.patient.DicomImage;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Desktop;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.WindowConstants;
+
 
 public class Test {
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
-		//String path = "file.dcm";
-		/**
-		 * Dossier contenant toutes les images .dcm d'un patient
-		 */
-		String path = "C:\\Users\\kamelya\\Documents\\TEPFDG_initiale_Linque\\TEP_FDG_Linque_anom_1.dcm";
-		
-		DicomImage dcm = new DicomImage(path);
-                BufferedImage buff = dcm.getBufferedImage();
+    public static void main(String[] args) {
+        String path  = "C:\\Users\\kamelya\\Documents\\TEPFDG_initiale_Linque\\TEP_FDG_Linque_anom_165.dcm";
+
+        DicomImage dcm = new DicomImage(path);
+
+        Image img = dcm.getImage();   
+
+
+        if (img == null) {
+            System.err.println("******** L'image n'a pas été ouverte!!! **********");
+        }
+        int n = img.getWidth(null);
+        int m = img.getHeight(null);
+        
+        BufferedImage buff_img = new BufferedImage(n, m, BufferedImage.TYPE_BYTE_GRAY);
+
+        Graphics gr = buff_img.getGraphics();
+        gr.drawImage(img, 0, 0, null);
+        gr.dispose();
+
+        //Affichage
+        JFrame frame = new JFrame("Image noir et blanc");
+        JLabel lblimage = new JLabel(new ImageIcon(buff_img));
+        frame.getContentPane().add(lblimage, BorderLayout.CENTER);
+        frame.setSize(500, 400);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
+
+        
+        byte pix[] = new byte[1];
+       
+        double[][] matrix = new double[n][m];
+
+        //swips the rows
+        BufferedImage new_img = new BufferedImage(n, m, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D gr1 = new_img.createGraphics();
+        gr1.drawImage(buff_img, 0, 0, null);
+        gr1.dispose();
+        
+        for (int row = 0; row < n; ++row) {
+            //swips the columns
+            for (int col = 0; col < m; ++col) {   
+                //matrix[row][col] = new_img.getRGB(row, col);
+                buff_img.getRaster().getDataElements(row, col, pix);
+                matrix[row][col] = pix[0];
+                new_img.setRGB(row, col, Color.BLUE.getRGB());
                 
-                int width = buff.getWidth();
-                int height = buff.getHeight();
-                byte[] dstBuff = ((DataBufferByte) buff.getRaster().getDataBuffer()).getData();
-                
-                for (int i=0; i<width/2; i++) {
-                    for (int j=0; j<width/2; j++) {
-                        System.out.println(dstBuff[i+j*width] & 0xFF);
-                    }
-                  
+                if(matrix[row][col] == 0) {
+                    new_img.setRGB(row, col, Color.BLACK.getRGB());
                 }
-		
-		
-	
-		
-	}
+                 if(matrix[row][col] > 0) {
+                    new_img.setRGB(row, col, Color.red.getRGB());
+                }
+               
+                //System.out.println("row " + row + " col " + col + " pixel " + matrix[row][col]);
+
+            }
+        }
+        
+        
+        
+         //Affichage
+        JFrame frame1 = new JFrame("Image couleur");
+        JLabel lblimage1 = new JLabel(new ImageIcon(new_img));
+        frame1.getContentPane().add(lblimage1, BorderLayout.CENTER);
+        frame1.setSize(500, 400);
+        frame1.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame1.setVisible(true);
+        try {
+            ImageIO.write(new_img, "jpg", new File("C:\\Users\\kamelya\\Desktop\\redhot.jpg"));
+            ImageIO.write(buff_img, "jpg", new File("C:\\Users\\kamelya\\Desktop\\gray.jpg"));
+        } catch (IOException ex) {
+            Logger.getLogger(Test.class.getName()).log(Level.SEVERE, null, ex);
+        }
+       
+        
+    }
+
+
 
 }
+
+
