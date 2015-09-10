@@ -6,14 +6,18 @@
 package QuantIF_Project.gui;
 
 import QuantIF_Project.patient.DicomImage;
+import QuantIF_Project.patient.Mask;
 import QuantIF_Project.patient.Patient;
 import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.util.Arrays;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 
 
@@ -39,6 +43,10 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      */
     private int currentImageID;
     
+    /**
+     * Masque du ROI à appliquer aux images
+     */
+    private Mask mask;
     
     /**
      * Creates new form AfficherImages
@@ -50,9 +58,9 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         this.patient = p;
         this.nbImages = p.getMaxDicomImage();
         this.currentImageID = 1;
-        
+        this.mask = null;
         try {
-            afficher(currentImageID);
+            display(currentImageID);
         } catch (BadParametersException ex) {
             Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -76,11 +84,16 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        maskFileChooser = new javax.swing.JFileChooser();
         nextButton = new javax.swing.JButton();
         prevButton = new javax.swing.JButton();
         imageSlider = new javax.swing.JSlider();
         imageIDTextField = new javax.swing.JTextField();
         imageLabel = new javax.swing.JLabel();
+        roiChooser = new javax.swing.JButton();
+
+        maskFileChooser.setDialogTitle("Choisir le dossier du masque");
+        maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
         setClosable(true);
         setIconifiable(true);
@@ -88,6 +101,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         setResizable(true);
         setTitle("Images");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         nextButton.setText("Suivant -->>");
         nextButton.addActionListener(new java.awt.event.ActionListener() {
@@ -95,6 +109,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 nextButtonActionPerformed(evt);
             }
         });
+        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(469, 143, 103, 40));
 
         prevButton.setText("<<-- Précédent");
         prevButton.addActionListener(new java.awt.event.ActionListener() {
@@ -102,6 +117,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 prevButtonActionPerformed(evt);
             }
         });
+        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 143, 117, 40));
 
         imageSlider.setMinimum(1);
         imageSlider.setValue(0);
@@ -110,39 +126,24 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 imageSliderStateChanged(evt);
             }
         });
+        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 258, 572, 33));
 
         imageIDTextField.setText("               ");
+        imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                imageIDTextFieldActionPerformed(evt);
+            }
+        });
+        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 212, 81, 28));
+        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(121, 13, 344, 170));
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(imageSlider, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(imageIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(prevButton, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(imageLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 344, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(nextButton, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(prevButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(nextButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(imageLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
-                .addComponent(imageIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(imageSlider, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(26, 26, 26))
-        );
+        roiChooser.setText("Charger une ROI");
+        roiChooser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                roiChooserActionPerformed(evt);
+            }
+        });
+        getContentPane().add(roiChooser, new org.netbeans.lib.awtextra.AbsoluteConstraints(3, 103, 120, 30));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -157,7 +158,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
        }
        
         try {
-            afficher(currentImageID);
+            display(currentImageID);
         } catch (BadParametersException ex) {
             Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -168,7 +169,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
            this.currentImageID -= 1;
        }
         try {
-            afficher(currentImageID);
+            display(currentImageID);
         } catch (BadParametersException ex) {
             Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -180,11 +181,53 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         try {
             // TODO add your handling code here:
             
-            afficher(this.currentImageID);
+            display(this.currentImageID);
         } catch (BadParametersException ex) {
             Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_imageSliderStateChanged
+
+    private void roiChooserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_roiChooserActionPerformed
+                // TODO add your handling code here:
+         int returnVal = maskFileChooser.showOpenDialog(this);
+        
+        if (JFileChooser.APPROVE_OPTION == returnVal) {
+            File directory;
+            directory = maskFileChooser.getSelectedFile();
+           
+            // Un fois le dossier choisi
+            
+            if (directory != null) {
+                
+                String maskDirPath = directory.getAbsolutePath();
+                
+                
+                //On peut créer un nouveau mask
+                
+		try {
+			this.mask = new Mask(this.patient, maskDirPath);
+                        JOptionPane.showMessageDialog(null, "Le masque du ROI a été chargé avec succès", "Info", JOptionPane.INFORMATION_MESSAGE);
+                        display(this.currentImageID);
+		} catch (NotDirectoryException | BadParametersException e) {
+			// TODO Auto-generated catch block
+              
+                        JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+		} 
+		
+                
+            }
+            else {
+                JOptionPane.showMessageDialog(null, "Problème d'accès au repertoire de fichiers", "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+           
+        } else {
+            System.out.println("File access cancelled by user.");
+        }
+    }//GEN-LAST:event_roiChooserActionPerformed
+
+    private void imageIDTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_imageIDTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_imageIDTextFieldActionPerformed
     
     /**
      * Affiche l'image d'id imageID dans la fenetre
@@ -192,21 +235,26 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      * @throws BadParametersException
      *      Levée lorsqu'aucune image ne correspond à imageID
      */
-    private void afficher(int imageID) throws BadParametersException {
+    private void display(int imageID) throws BadParametersException {
         DicomImage dcm = this.patient.getDicomImage(imageID);
         
         BufferedImage bufferedImage = dcm.getBufferedImage();
         byte[] pixels =  ((DataBufferByte) bufferedImage.getRaster().getDataBuffer()).getData();
         //System.out.println(Arrays.toString(pixels));
-        imageLabel.setIcon(new ImageIcon(bufferedImage));
+        
+        //On applique le mask s'il y'en a un
+        if (this.mask != null) {
+            //bufferedImage= this.mask.apply(bufferedImage, dcm.getImageIndex());
+        }
+        imageLabel.setIcon(new ImageIcon(dcm.getImage()));
         //imageLabel.setIcon(icon);
         imageIDTextField.setText(imageID + " / " + this.nbImages);
        
-        System.out.println(Arrays.toString(pixels));
-        
         int width = bufferedImage.getWidth();
         int height = bufferedImage.getHeight();
         
+        System.out.println("Image TEP :" + width +"x"+height);
+        /*
         for (int i = 0; i < width; i++) {
             for (int j=0; j < height; j++) {
                 int rgb = bufferedImage.getRGB(j, i);
@@ -217,20 +265,16 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 System.out.println(i + " x " + j + " : " + gray);
             }
         }
-        
-        
-    }
-    /*
-    private Image convert2RedHot(Image img) {
+        */
         
     }
-    */
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField imageIDTextField;
     private javax.swing.JLabel imageLabel;
     private javax.swing.JSlider imageSlider;
+    private javax.swing.JFileChooser maskFileChooser;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;
+    private javax.swing.JButton roiChooser;
     // End of variables declaration//GEN-END:variables
 }
