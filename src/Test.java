@@ -1,11 +1,12 @@
 import QuantIF_Project.patient.DicomImage;
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Desktop;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.awt.image.LookupOp;
+import java.awt.image.LookupTable;
+import java.awt.image.ShortLookupTable;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -20,7 +21,10 @@ import javax.swing.WindowConstants;
 public class Test {
 
     public static void main(String[] args) {
-        String path  = "C:\\Users\\kamelya\\Documents\\TEPFDG_initiale_Linque\\TEP_FDG_Linque_anom_165.dcm";
+        boolean atWork = false;
+        String root = atWork ? "C:\\Users\\kamelya\\Documents\\TEPFDG_initiale_Linque\\" 
+                : "C:\\Users\\Cyriac\\Google Drive\\QuantIF_Project\\TEPFDG_initiale_Linque\\";
+        String path  = root + "TEP_FDG_Linque_anom_200.dcm";
 
         DicomImage dcm = new DicomImage(path);
 
@@ -54,31 +58,33 @@ public class Test {
         double[][] matrix = new double[n][m];
 
         //swips the rows
-        BufferedImage new_img = new BufferedImage(n, m, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage new_img = new BufferedImage(n, m, BufferedImage.TYPE_INT_RGB);
         Graphics2D gr1 = new_img.createGraphics();
         gr1.drawImage(buff_img, 0, 0, null);
         gr1.dispose();
+        short[] data = new short[256];
+        for (int i = 0; i<256; ++i ) {
+            data[i] = (short) (256 - i);
+        }
         
+        LookupTable lut = new ShortLookupTable(0, data);
+        LookupOp op = new LookupOp(lut, null);
+        
+        new_img = op.filter(new_img, null);
+        /*
         for (int row = 0; row < n; ++row) {
             //swips the columns
             for (int col = 0; col < m; ++col) {   
                 //matrix[row][col] = new_img.getRGB(row, col);
                 buff_img.getRaster().getDataElements(row, col, pix);
                 matrix[row][col] = pix[0];
-                new_img.setRGB(row, col, Color.BLUE.getRGB());
-                
-                if(matrix[row][col] == 0) {
-                    new_img.setRGB(row, col, Color.BLACK.getRGB());
-                }
-                 if(matrix[row][col] > 0) {
-                    new_img.setRGB(row, col, Color.red.getRGB());
-                }
-               
+    
+                new_img.setRGB(row, col, 0);
                 //System.out.println("row " + row + " col " + col + " pixel " + matrix[row][col]);
 
             }
         }
-        
+        */
         
         
          //Affichage
@@ -88,9 +94,11 @@ public class Test {
         frame1.setSize(500, 400);
         frame1.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame1.setVisible(true);
+        String desktopPath = atWork ? "C:\\Users\\kamelya\\Desktop\\" 
+                : "C:\\Users\\Cyriac\\Desktop\\";
         try {
-            ImageIO.write(new_img, "jpg", new File("C:\\Users\\kamelya\\Desktop\\redhot.jpg"));
-            ImageIO.write(buff_img, "jpg", new File("C:\\Users\\kamelya\\Desktop\\gray.jpg"));
+            ImageIO.write(new_img, "jpg", new File(desktopPath + "redhot.jpg"));
+            ImageIO.write(buff_img, "jpg", new File(desktopPath + "gray.jpg"));
         } catch (IOException ex) {
             Logger.getLogger(Test.class.getName()).log(Level.SEVERE, null, ex);
         }
