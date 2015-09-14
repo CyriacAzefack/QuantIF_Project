@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 
 import ij.plugin.DICOM;
+import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 /**
@@ -92,7 +93,7 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
 	
 	/**
 	 * Compare deux images en fonction de leur numero d'index.
-	 * Renvoies un nombre n�gatif si l'image argument est apr�s l'image objet et un nombre positif si non.
+	 * Renvoies un nombre n�gatif si l'image passé en paramètre est aprés l'image objet et un nombre positif sinon.
 	 * @param dcmImage
 	 * @return
 	 */
@@ -116,6 +117,9 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
             Image image = this.getImage();
             BufferedImage buffImg = new BufferedImage(image.getWidth(null), image.getHeight(null),
         BufferedImage.TYPE_BYTE_GRAY);
+            Graphics gr = buffImg.getGraphics();
+            gr.drawImage(image, 0, 0, null);
+            
             
             return buffImg;            
         }
