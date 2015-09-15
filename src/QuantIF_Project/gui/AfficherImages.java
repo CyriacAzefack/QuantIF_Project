@@ -6,12 +6,15 @@
 package QuantIF_Project.gui;
 
 import QuantIF_Project.patient.DicomImage;
-import QuantIF_Project.patient.Mask;
+import QuantIF_Project.mask.Mask;
 import QuantIF_Project.patient.Patient;
+import QuantIF_Project.patient.exceptions.BadMaskStructException;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,6 +51,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      */
     private Mask mask;
     
+    
     /**
      * Creates new form AfficherImages
      * @param p
@@ -57,8 +61,9 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         initComponents();
         this.patient = p;
         this.nbImages = p.getMaxDicomImage();
-        this.currentImageID = 1;
+        this.currentImageID = 0;
         this.mask = null;
+    
         try {
             display(currentImageID);
         } catch (BadParametersException ex) {
@@ -66,8 +71,8 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         }
         
         //Slider Settings
-        imageSlider.setMaximum(this.nbImages);
-        imageSlider.setMinimum(1);
+        imageSlider.setMaximum(this.nbImages - 1);
+        imageSlider.setMinimum(0);
         
         //imageIDTextField Settings
         imageIDTextField.setEditable(false);
@@ -91,6 +96,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         imageIDTextField = new javax.swing.JTextField();
         imageLabel = new javax.swing.JLabel();
         roiChooser = new javax.swing.JButton();
+        removeROI = new javax.swing.JButton();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -109,7 +115,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 nextButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(469, 143, 103, 40));
+        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 450, 103, 40));
 
         prevButton.setText("<<-- Précédent");
         prevButton.addActionListener(new java.awt.event.ActionListener() {
@@ -117,16 +123,15 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 prevButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 143, 117, 40));
+        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 450, 117, 40));
 
-        imageSlider.setMinimum(1);
         imageSlider.setValue(0);
         imageSlider.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 imageSliderStateChanged(evt);
             }
         });
-        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 258, 572, 33));
+        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 490, 870, 50));
 
         imageIDTextField.setText("               ");
         imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
@@ -134,8 +139,11 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 imageIDTextFieldActionPerformed(evt);
             }
         });
-        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 212, 81, 28));
-        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(121, 13, 344, 170));
+        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 410, 81, 28));
+
+        imageLabel.setMaximumSize(new java.awt.Dimension(512, 512));
+        imageLabel.setMinimumSize(new java.awt.Dimension(512, 512));
+        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 10, 700, 400));
 
         roiChooser.setText("Charger une ROI");
         roiChooser.addActionListener(new java.awt.event.ActionListener() {
@@ -143,7 +151,15 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 roiChooserActionPerformed(evt);
             }
         });
-        getContentPane().add(roiChooser, new org.netbeans.lib.awtextra.AbsoluteConstraints(3, 103, 120, 30));
+        getContentPane().add(roiChooser, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 60, 170, 30));
+
+        removeROI.setText("Enlever la ROI");
+        removeROI.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removeROIActionPerformed(evt);
+            }
+        });
+        getContentPane().add(removeROI, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 100, 170, 30));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -206,13 +222,17 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 
 		try {
 			this.mask = new Mask(this.patient, maskDirPath);
+                       
                         JOptionPane.showMessageDialog(null, "Le masque du ROI a été chargé avec succès", "Info", JOptionPane.INFORMATION_MESSAGE);
                         display(this.currentImageID);
 		} catch (NotDirectoryException | BadParametersException e) {
 			// TODO Auto-generated catch block
               
                         JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-		} 
+                        Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, e);
+		} catch (BadMaskStructException ex) { 
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                } 
 		
                 
             }
@@ -228,44 +248,48 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     private void imageIDTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_imageIDTextFieldActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_imageIDTextFieldActionPerformed
+
+    private void removeROIActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeROIActionPerformed
+        this.mask = null;
+    }//GEN-LAST:event_removeROIActionPerformed
     
     /**
      * Affiche l'image d'id imageID dans la fenetre
-     * @param imageID
+     * @param imageID id de l'image à afficher
      * @throws BadParametersException
      *      Levée lorsqu'aucune image ne correspond à imageID
      */
     private void display(int imageID) throws BadParametersException {
         DicomImage dcm = this.patient.getDicomImage(imageID);
+        BufferedImage bufferedImage;
         
-        BufferedImage bufferedImage = dcm.getBufferedImage();
-        byte[] pixels =  ((DataBufferByte) bufferedImage.getRaster().getDataBuffer()).getData();
-        //System.out.println(Arrays.toString(pixels));
-        
-        //On applique le mask s'il y'en a un
-        if (this.mask != null) {
-            //bufferedImage= this.mask.apply(bufferedImage, dcm.getImageIndex());
+        //Si aucune ROI n'a été chargée, on affiche l'image de base
+        if (this.mask == null) {
+            bufferedImage = dcm.getBufferedImage();
         }
-        imageLabel.setIcon(new ImageIcon(dcm.getImage()));
-        //imageLabel.setIcon(icon);
-        imageIDTextField.setText(imageID + " / " + this.nbImages);
+        else { // Sinon on affiche l'image avec la ROI dessus
+            bufferedImage = this.mask.getImageWithROI(imageID);
+        }
+        
        
-        int width = bufferedImage.getWidth();
-        int height = bufferedImage.getHeight();
+        imageLabel.setIcon(new ImageIcon(scale(bufferedImage, 512, 512)));
         
-        System.out.println("Image TEP :" + width +"x"+height);
-        /*
-        for (int i = 0; i < width; i++) {
-            for (int j=0; j < height; j++) {
-                int rgb = bufferedImage.getRGB(j, i);
-                int r = (rgb >> 16) & 0xFF;
-                int g = (rgb >> 8) & 0xFF;
-                int b = (rgb & 0xFF);
-                int gray = (r + g + b) / 3;
-                System.out.println(i + " x " + j + " : " + gray);
-            }
-        }
-        */
+        imageIDTextField.setText(imageID + " / " + (this.nbImages-1));
+       
+    }
+    
+    private Image scale(Image source, int width, int height) {
+        /* On crée une nouvelle image aux bonnes dimensions. */ 
+        BufferedImage buf = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB); 
+
+        /* On dessine sur le Graphics de l'image bufferisée. */ 
+        Graphics2D g = buf.createGraphics(); 
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR); 
+        g.drawImage(source, 0, 0, width, height, null); 
+        g.dispose(); 
+
+        /* On retourne l'image bufferisée, qui est une image. */ 
+        return buf; 
         
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -275,6 +299,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     private javax.swing.JFileChooser maskFileChooser;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;
+    private javax.swing.JButton removeROI;
     private javax.swing.JButton roiChooser;
     // End of variables declaration//GEN-END:variables
 }
