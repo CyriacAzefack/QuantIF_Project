@@ -1,4 +1,4 @@
-package QuantIF_Project.patientsss;
+package QuantIF_Project.patient;
 /**
  * 
  * @author Cyriac

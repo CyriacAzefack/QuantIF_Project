@@ -97,6 +97,12 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         imageLabel = new javax.swing.JLabel();
         roiChooser = new javax.swing.JButton();
         removeROI = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        maxValue = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        minValue = new javax.swing.JTextField();
+        jSeparator1 = new javax.swing.JSeparator();
+        jSeparator2 = new javax.swing.JSeparator();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -109,21 +115,21 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        nextButton.setText("Suivant -->>");
+        nextButton.setText("Image suivante");
         nextButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 nextButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 450, 103, 40));
+        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(860, 500, 120, 40));
 
-        prevButton.setText("<<-- Précédent");
+        prevButton.setText("Image précédente");
         prevButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 prevButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 450, 117, 40));
+        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 500, 130, 40));
 
         imageSlider.setValue(0);
         imageSlider.addChangeListener(new javax.swing.event.ChangeListener() {
@@ -131,7 +137,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 imageSliderStateChanged(evt);
             }
         });
-        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 490, 870, 50));
+        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 540, 980, 50));
 
         imageIDTextField.setText("               ");
         imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
@@ -139,11 +145,11 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 imageIDTextFieldActionPerformed(evt);
             }
         });
-        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 410, 81, 28));
+        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 470, 81, 28));
 
         imageLabel.setMaximumSize(new java.awt.Dimension(512, 512));
         imageLabel.setMinimumSize(new java.awt.Dimension(512, 512));
-        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 10, 700, 400));
+        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 10, 512, 512));
 
         roiChooser.setText("Charger une ROI");
         roiChooser.addActionListener(new java.awt.event.ActionListener() {
@@ -160,6 +166,20 @@ public class AfficherImages extends javax.swing.JInternalFrame {
             }
         });
         getContentPane().add(removeROI, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 100, 170, 30));
+
+        jLabel1.setText("Valeur Max dans la tumeur : ");
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 40, -1, 20));
+
+        maxValue.setEditable(false);
+        getContentPane().add(maxValue, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 40, 90, -1));
+
+        jLabel2.setText("Valeur Min dans la tumeur : ");
+        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 70, -1, 20));
+
+        minValue.setEditable(false);
+        getContentPane().add(minValue, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 70, 90, -1));
+        getContentPane().add(jSeparator1, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 30, 240, 10));
+        getContentPane().add(jSeparator2, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 100, 240, -1));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -296,7 +316,13 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     private javax.swing.JTextField imageIDTextField;
     private javax.swing.JLabel imageLabel;
     private javax.swing.JSlider imageSlider;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator jSeparator2;
     private javax.swing.JFileChooser maskFileChooser;
+    private javax.swing.JTextField maxValue;
+    private javax.swing.JTextField minValue;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;
     private javax.swing.JButton removeROI;

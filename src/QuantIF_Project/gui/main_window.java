@@ -10,9 +10,11 @@ import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import QuantIF_Project.patient.Patient;
+import java.awt.Component;
 import java.io.File;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 
@@ -35,7 +37,7 @@ public class main_window extends javax.swing.JFrame {
     public main_window() {
         initComponents();
         this.patient = null;
-        fcTextArea.setEditable(false);
+        
     }
 
     /**
@@ -49,20 +51,22 @@ public class main_window extends javax.swing.JFrame {
 
         fileChooser = new javax.swing.JFileChooser();
         desktop = new javax.swing.JDesktopPane();
+        jPanel1 = new javax.swing.JPanel();
+        jButton1 = new javax.swing.JButton();
+        jPanel2 = new javax.swing.JPanel();
+        jButton2 = new javax.swing.JButton();
+        jPanel3 = new javax.swing.JPanel();
+        jButton3 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        fcTextArea = new javax.swing.JTextArea();
+        patientDescriptTextField = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
-        jMenuItem6 = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        jSeparator1 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem2 = new javax.swing.JMenuItem();
-        jMenuItem3 = new javax.swing.JMenuItem();
+        openPatientMenu = new javax.swing.JMenuItem();
+        closePatientMenu = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
-        jMenu3 = new javax.swing.JMenu();
-        jMenuItem4 = new javax.swing.JMenuItem();
-        jMenuItem5 = new javax.swing.JMenuItem();
+        closeAllMenu = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
+        displayImagesMenu = new javax.swing.JMenuItem();
 
         fileChooser.setCurrentDirectory(new java.io.File("C:\\Users\\Cyriac\\Google Drive"));
         fileChooser.setDialogTitle("Selectionner un dossier patient");
@@ -72,9 +76,72 @@ public class main_window extends javax.swing.JFrame {
         setTitle("QuantIF_Project");
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
-        fcTextArea.setColumns(20);
-        fcTextArea.setRows(5);
-        jScrollPane1.setViewportView(fcTextArea);
+        jButton1.setText("PATLAK");
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jButton1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jButton1)
+                .addContainerGap(61, Short.MAX_VALUE))
+        );
+
+        jButton2.setText("HUNTER");
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jButton2)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jButton2)
+                .addContainerGap(48, Short.MAX_VALUE))
+        );
+
+        jButton3.setText("BARBOLOSI");
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButton3)
+                .addGap(45, 45, 45))
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jButton3)
+                .addContainerGap(48, Short.MAX_VALUE))
+        );
+
+        patientDescriptTextField.setEditable(false);
+        patientDescriptTextField.setColumns(20);
+        patientDescriptTextField.setFont(new java.awt.Font("Monospaced", 1, 13)); // NOI18N
+        patientDescriptTextField.setLineWrap(true);
+        patientDescriptTextField.setRows(5);
+        patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
+        patientDescriptTextField.setAutoscrolls(false);
+        patientDescriptTextField.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        jScrollPane1.setViewportView(patientDescriptTextField);
 
         javax.swing.GroupLayout desktopLayout = new javax.swing.GroupLayout(desktop);
         desktop.setLayout(desktopLayout);
@@ -82,16 +149,30 @@ public class main_window extends javax.swing.JFrame {
             desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(desktopLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 389, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(214, Short.MAX_VALUE))
+                .addGroup(desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(697, Short.MAX_VALUE))
         );
         desktopLayout.setVerticalGroup(
             desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(desktopLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 167, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(144, Short.MAX_VALUE))
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(113, Short.MAX_VALUE))
         );
+        desktop.setLayer(jPanel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        desktop.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        desktop.setLayer(jPanel3, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jScrollPane1, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         jMenu1.setText("Application");
@@ -101,50 +182,45 @@ public class main_window extends javax.swing.JFrame {
             }
         });
 
-        jMenuItem6.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem6.setText("Ouvrir dossier patient");
-        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+        openPatientMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+        openPatientMenu.setText("Ouvrir dossier patient");
+        openPatientMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem6ActionPerformed(evt);
+                openPatientMenuActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem6);
+        jMenu1.add(openPatientMenu);
 
-        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F4, java.awt.event.InputEvent.ALT_MASK));
-        jMenuItem1.setText("Quitter");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        closePatientMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
+        closePatientMenu.setText("Fermer dossier patient");
+        closePatientMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                closePatientMenuActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem1);
+        jMenu1.add(closePatientMenu);
+        jMenu1.add(jSeparator2);
+
+        closeAllMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F4, java.awt.event.InputEvent.ALT_MASK));
+        closeAllMenu.setText("Quitter");
+        closeAllMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                closeAllMenuActionPerformed(evt);
+            }
+        });
+        jMenu1.add(closeAllMenu);
 
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Options");
-        jMenu2.add(jSeparator1);
 
-        jMenuItem2.setText("Afficher Images");
-        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+        displayImagesMenu.setText("Afficher Images");
+        displayImagesMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem2ActionPerformed(evt);
+                displayImagesMenuActionPerformed(evt);
             }
         });
-        jMenu2.add(jMenuItem2);
-
-        jMenuItem3.setText("option2");
-        jMenu2.add(jMenuItem3);
-        jMenu2.add(jSeparator2);
-
-        jMenu3.setText("option3");
-
-        jMenuItem4.setText("option31");
-        jMenu3.add(jMenuItem4);
-
-        jMenuItem5.setText("option32");
-        jMenu3.add(jMenuItem5);
-
-        jMenu2.add(jMenu3);
+        jMenu2.add(displayImagesMenu);
 
         jMenuBar1.add(jMenu2);
 
@@ -158,73 +234,95 @@ public class main_window extends javax.swing.JFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(desktop, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addComponent(desktop)
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+    private void closeAllMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllMenuActionPerformed
         this.dispose();
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
+    }//GEN-LAST:event_closeAllMenuActionPerformed
 
     private void jMenu1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenu1ActionPerformed
                                   
     }//GEN-LAST:event_jMenu1ActionPerformed
 
-    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
-        if (this.patient != null) {
-            AfficherImages ai = new AfficherImages(this.patient);
-            desktop.add(ai);
-            ai.show();
-        }
-        else {
-            fcTextArea.setText("Aucun patient n'a été sélectionner!");
-            
-        }
-    }//GEN-LAST:event_jMenuItem2ActionPerformed
-
-    private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
+    private void openPatientMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openPatientMenuActionPerformed
+        if (this.patient != null)
+            this.closePatientMenuActionPerformed(evt);
         
         int returnVal = fileChooser.showOpenDialog(this);
-        
+        this.patientDescriptTextField.setText("Ouverture du patient en cours...");
         if (JFileChooser.APPROVE_OPTION == returnVal) {
+            
             File directory;
             directory = fileChooser.getSelectedFile();
            
             // Un fois le dossier choisi
             
             if (directory != null) {
-                fcTextArea.setVisible(true);
+               
                 String patientDirPath = directory.getAbsolutePath();
-                fcTextArea.setText(patientDirPath);
+                
                 
                 //On peut créer un nouveau patient
                 
+               
 		try {
 			this.patient = new Patient(patientDirPath);
-                        JOptionPane.showMessageDialog(null, "Le dossier patient a été ouvert avec succès", "Info", JOptionPane.INFORMATION_MESSAGE);
-                        fcTextArea.setText(this.patient.toString());
+                        JOptionPane.showMessageDialog(null, "Le dossier patient a été ouvert avec succès\n\n"+this.patient.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
+                        this.patientDescriptTextField.setText(this.patient.toString());
+                        this.displayImagesMenuActionPerformed(evt);
+                        
                         
                         System.out.println(this.patient);
 		} catch (NotDirectoryException | DicomFilesNotFoundException
                         | BadParametersException e) {
 			// TODO Auto-generated catch block
                    
-			fcTextArea.setText(e.getMessage());
-                        JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                        this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
+                        this.openPatientMenuActionPerformed(evt);
 		} 
+                
 		
                 
             }
             else {
-                fcTextArea.setText("Problem accessing the file!");
+                JOptionPane.showMessageDialog(null, "Problem accessing the file!", "Erreur", JOptionPane.ERROR_MESSAGE);
             }
            
         } else {
             System.out.println("File access cancelled by user.");
         }
-    }//GEN-LAST:event_jMenuItem6ActionPerformed
+    }//GEN-LAST:event_openPatientMenuActionPerformed
+
+    private void displayImagesMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_displayImagesMenuActionPerformed
+        if (this.patient != null) {
+            AfficherImages ai = new AfficherImages(this.patient);
+            desktop.add(ai);
+            ai.show();
+        }
+        else {
+            JOptionPane.showMessageDialog(null, "Aucun patient sélectionné ", "Erreur", JOptionPane.ERROR_MESSAGE);
+
+        }
+    }//GEN-LAST:event_displayImagesMenuActionPerformed
+
+    private void closePatientMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closePatientMenuActionPerformed
+        Component[] components = desktop.getComponents();
+        for (  Component component : components) {
+            if (component instanceof AfficherImages) {
+                desktop.remove(component);
+                desktop.validate();
+                desktop.repaint();
+            }
+        }
+        this.patient = null;
+        JOptionPane.showMessageDialog(null, "Le patient a été fermé", "Fermeture patient", JOptionPane.INFORMATION_MESSAGE);
+        this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
+    }//GEN-LAST:event_closePatientMenuActionPerformed
 
     /**
      * @param args the command line arguments
@@ -262,21 +360,23 @@ public class main_window extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem closeAllMenu;
+    private javax.swing.JMenuItem closePatientMenu;
     private javax.swing.JDesktopPane desktop;
-    private javax.swing.JTextArea fcTextArea;
+    private javax.swing.JMenuItem displayImagesMenu;
     private javax.swing.JFileChooser fileChooser;
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem3;
-    private javax.swing.JMenuItem jMenuItem4;
-    private javax.swing.JMenuItem jMenuItem5;
-    private javax.swing.JMenuItem jMenuItem6;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
+    private javax.swing.JMenuItem openPatientMenu;
+    private javax.swing.JTextArea patientDescriptTextField;
     // End of variables declaration//GEN-END:variables
 }

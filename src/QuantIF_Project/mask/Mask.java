@@ -45,9 +45,22 @@ public class Mask {
     private ArrayList<BufferedImage> maskImages;
     
     /**
-     * Liste des images du patient avec le ROI
+     * Liste des images du patient avec le masque inclu
      */
-     private ArrayList<BufferedImage> imagesWithROI;
+     private ArrayList<BufferedImage> imagesWithMask;
+     
+     /**
+      * Liste des valeurs maximales atteintes par la tumeur dans 
+      * les images du patient pour chaque image
+      */
+     private int[] maxImagesWithMask;
+     
+      /**
+      * Liste des valeurs minimales atteintes par la tumeur dans 
+      * les images du patient pour chaque image
+      */
+     private int[] minImagesWithMask;
+     
      
     /**
      * largeur de l'image du masque
@@ -59,8 +72,7 @@ public class Mask {
      */
     private int height;
     
-    private JFrame frame;
-            
+
     /**
      * Cree un masque pour une ROI prédéfinie
      * @param patient
@@ -87,11 +99,11 @@ public class Mask {
         if(maskImages.size() < patient.getMaxDicomImage())
             throw new BadMaskStructException("Cette structure de masque ne peut s'appliquer à ce patient car pas assez de fichiers!!");
         
+        this.maxImagesWithMask = new int[maskImages.size()];
+        this.minImagesWithMask = new int[maskImages.size()];
         
         
-        
-        
-        this.imagesWithROI = applyROI();
+        this.imagesWithMask = applyROI();
         
         
         
@@ -109,10 +121,10 @@ public class Mask {
        
         if (imageIndex < 0)
             throw new BadParametersException("L'index doit être supérieur ou égal à 0");
-        if (imageIndex > imagesWithROI.size()) 
+        if (imageIndex > imagesWithMask.size()) 
             throw new BadParametersException("L'index doit être inférieur au nombre max d'images");
         
-        return this.imagesWithROI.get(imageIndex);
+        return this.imagesWithMask.get(imageIndex);
     }
     
     /**
@@ -159,7 +171,7 @@ public class Mask {
         
         
         
-        //On parcourt le dossier de fichiers
+        //On parcourt le dossier de fichiers pour créer les bufferedImage 
         if (files != null) {
             for (File file : files) {
             
@@ -250,33 +262,31 @@ public class Mask {
     }
     
     /**
-     * Applique le masque à une image
+     * Applique le masque à une image.
      * @param bimg
      * @return 
      */
     private BufferedImage applyROItoImage(BufferedImage bimg, int index) throws BadParametersException {
         BufferedImage newImage = new BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB);
         
-             
-        
-        
         BufferedImage oldImage = this.patient.getDicomImage(index).getBufferedImage();
        
         BufferedImage maskImage = this.maskImages.get(index);
+        
+        //On remplit la nouvelle image en fonction de l'ancienne et du masque
+        
+        //La j'affiche l'ancienne image et j'affiche la tumeur en rouge
         for (int row = 0; row < this.width; ++row) {
-            //swips the columns
+            
             for (int col = 0; col < this.height; ++col) {
-                
+                int newPixelValue  = oldImage.getRGB(col, row);
                 if (maskImage.getRGB(col, row) == Color.WHITE.getRGB()) {
-                   newImage.setRGB(col, row, Color.RED.getRGB());
-                   
+                    
+                    newPixelValue = Color.red.getRGB();
                 }
-                else {
-                    newImage.setRGB(col, row, oldImage.getRGB(col, row));
-                   
-                }
+               
                         
-                //newImage.setRGB(col, row, Color.red.get);
+                newImage.setRGB(col, row,newPixelValue);
             }
         }
         

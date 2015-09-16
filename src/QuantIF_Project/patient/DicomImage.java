@@ -49,10 +49,13 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
 	 */
 	public DicomImage(String path) {
 		super();
-		
+		this.getImageStackSize();
 		this.path = path;
 		
+                //Si le fichier n'est pas un fichier DICOM, le reader DICOM vas 
+                // quand même l'ouvrir sans erreur
 		this.open(path);
+                
 		
 		this.dicomInfos = extractInfos();
                 
@@ -65,7 +68,7 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
 	 * @return
 	 */
 	public int getImageIndex() {
-		return Integer.parseInt(this.searchInfoByKey("ImageIndex")); 
+		return Integer.parseInt(this.searchInfoByKey("ImageNumber")); 
 	}
 	
 	/**
@@ -73,7 +76,7 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
 	 * @return
 	 */
 	public String getPath() {
-		return this.path;
+            return this.path;
 	}
 	
 	/**
@@ -116,7 +119,7 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
 	public BufferedImage getBufferedImage() {
             Image image = this.getImage();
             BufferedImage buffImg = new BufferedImage(image.getWidth(null), image.getHeight(null),
-        BufferedImage.TYPE_BYTE_GRAY);
+        BufferedImage.TYPE_INT_RGB);
             Graphics gr = buffImg.getGraphics();
             gr.drawImage(image, 0, 0, null);
             
@@ -124,21 +127,7 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
             return buffImg;            
         }
 	
-        /**
-         * Change le lookup Table de l'image
-         * @param newLut
-         *      peut prendre les valeurs
-         *      DicomImage.LUT_GRAY
-         *      DicomImage.LUT_RED_HOT
-         * @throws Quantif_project.exceptions.BadParametersException
-         *          Levée quand le paramètre d'entrée ne correspond pas à une valeur connue de LUT
-         */
-        public void setLUT(int newLut) throws BadParametersException {
-            if (newLut != DicomImage.LUT_GRAY && newLut != DicomImage.LUT_RED_HOT) {
-                throw new BadParametersException("Cette valeur de lut est incorrecte!");
-            }
-            this.lut = newLut;
-        }
+       
         /**
          * Renvoies l'image du fichier DICOM selon le Lookup Table demandé
          * @return 

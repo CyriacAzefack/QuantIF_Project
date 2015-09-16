@@ -3,12 +3,16 @@ package QuantIF_Project.patient;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.dcm4che2.io.DicomInputStream;
 
 
@@ -46,11 +50,10 @@ public class Patient {
 	private int weight;
 	
 	/**
-	 * Liste des images li�es au patient
+	 * Liste des images liés au patient
 	 */
 	private ArrayList<DicomImage> dicomImages;
         
-      
         
 	
 	
@@ -70,9 +73,11 @@ public class Patient {
 		if (dirPath == null) {
 			throw new BadParametersException("Le chemin rentré est invalide.");
 		}
-		//On doit v�rifier quer le chemin fourni est un repertoire de fichier
+		
                 
                
+                
+                
 		
 		this.dicomImages = analyseDirectory(dirPath);
 		
@@ -200,26 +205,22 @@ public class Patient {
                 
 		return listDI;
 	}
-
-    private boolean isADicomFile(String absolutePath) {
-           boolean b = true;
-      
-            DicomInputStream dis;
+        
+        /**
+         * Vérifie que le fichier est bien un fichier DICOM
+         * @param absolutePath chemin du fichier
+         * @return 
+         */
+        private boolean isADicomFile(String absolutePath) {
+            boolean isADCM = false;
             try {
-                dis = new DicomInputStream(new File(absolutePath));
-                //dis.close();
+                DicomInputStream dis = new DicomInputStream(new File(absolutePath));
+                //Si on arrive à l'ouvrir, ce que c'est bon
+                isADCM = true;
             } catch (IOException ex) {
-                //L'erreur n'est pas important, si elle est levée celà signifie que l'on a pas
-                // à faire à un fichier DICOM
                 //Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
-                b = false;
             }
-                
-           
-            
-        
-        return b;
-        
-        
-    }
+
+            return isADCM;
+        }
 }
