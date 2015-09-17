@@ -153,8 +153,18 @@ public class Patient {
 		String str = "Présentation du patient " + this.id + "\n";
 		str += "-Nom : " + this.name + "\n";
 		str += "-Sexe : " + this.sex + "\n";
-		str += "-Age : " + this.age + " ans\n";
-		str += "-Poids : " + this.weight + " Kg\n";
+                if (this.age == 0) {
+                    str += "-Age : N/A ans\n";
+                } else {
+                    str += "-Age : " + this.age + " ans\n";
+                }
+		
+                if (this.weight == 0) {
+                    str += "-Poids : " + this.weight + " Kg\n";
+                } else {
+                    str += "-Poids : N/A Kg\n";
+                }
+		
 		
 		return str;
 	}
