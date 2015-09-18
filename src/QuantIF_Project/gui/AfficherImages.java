@@ -10,6 +10,7 @@ import QuantIF_Project.mask.Mask;
 import QuantIF_Project.patient.Patient;
 import QuantIF_Project.patient.exceptions.BadMaskStructException;
 import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.patient.exceptions.ImageSizeException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -245,13 +246,12 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                        
                         JOptionPane.showMessageDialog(null, "Le masque du ROI a été chargé avec succès", "Info", JOptionPane.INFORMATION_MESSAGE);
                         display(this.currentImageID);
-		} catch (NotDirectoryException | BadParametersException e) {
+		} catch (NotDirectoryException | BadParametersException | BadMaskStructException | ImageSizeException e) {
 			// TODO Auto-generated catch block
               
                         JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
                         Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, e);
-		} catch (BadMaskStructException ex) { 
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+		
                 } 
 		
                 
