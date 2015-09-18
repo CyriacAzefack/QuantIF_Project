@@ -1,65 +1,56 @@
 package QuantIF_Project.patient;
-import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.utils.DicomUtils;
+import com.pixelmed.dicom.Attribute;
+import com.pixelmed.dicom.AttributeList;
+import com.pixelmed.dicom.AttributeTag;
+import com.pixelmed.dicom.DicomException;
+import com.pixelmed.dicom.TagFromName;
+import com.pixelmed.display.SourceImage;
 import java.util.ArrayList;
 import java.util.Properties;
 
-import ij.plugin.DICOM;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 /**
  * 
  * @author Cyriac
  *
  */
-public class DicomImage extends DICOM implements Comparable<DicomImage> {
+public class DicomImage implements Comparable<DicomImage> {
 	
 	/**
-	 * Liste des informations sur une image
+	 * Metadata contenu dans le fichier DICOM
 	 */
-	private final ArrayList<DicomInfo> dicomInfos;
+	private final AttributeList attributeList;
 	
 	/**
-	 * Chemin vers le fichier dcm
+	 * Chemin vers le fichier DICOM
 	 */
-	private final String path;
+	private final File dicomFile;
         
-        /**
-         * si lut = LUT_GRAY, l'image sera affiché en gris
-         */
-        public final static int LUT_GRAY = 0;
+        private SourceImage srcImg;
         
-        /**
-         * si lut = LUT_RED_HOT, l'image sera affiché en red hot
-         */
-        public final static int LUT_RED_HOT = 1;
-        
-        /**
-         * Défini le type d'affichage de l'image
-         */
-	private int lut;
-	
-      
-     
-	
 	
 	/**
-	 * On cr�e une instance de DicomImage
-	 * @param path
+	 * On cree une instance de DicomImage
+         * @param file fichier DICOM
+         * @throws com.pixelmed.dicom.DicomException
+         * @throws java.io.IOException
 	 */
-	public DicomImage(String path) {
-		super();
-		this.getImageStackSize();
-		this.path = path;
-		
-                //Si le fichier n'est pas un fichier DICOM, le reader DICOM vas 
-                // quand même l'ouvrir sans erreur
-		this.open(path);
-                
-		
-		this.dicomInfos = extractInfos();
-                
-                this.lut = DicomImage.LUT_GRAY;
+	public DicomImage(File file) throws DicomException, IOException {
+            if (!DicomUtils.isADicomFile(file)) 
+                throw new DicomException("Le fichier " + file.getName() + " n'est pas un fichier DICOM");
+            
+            this.dicomFile = file;
+                    
+            this.attributeList = new AttributeList();            
+            this.attributeList.read(file.getAbsolutePath());
+            
+            this.srcImg = new SourceImage(file.getAbsolutePath());
+               
 		
 	}
 	
@@ -68,29 +59,18 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
 	 * @return
 	 */
 	public int getImageIndex() {
-		return Integer.parseInt(this.searchInfoByKey("ImageNumber")); 
+		return Integer.parseInt(this.getAttribute(TagFromName.ImageIndex)); 
 	}
 	
-	/**
-	 * Renvoies le chemin du fichier
-	 * @return
-	 */
-	public String getPath() {
-            return this.path;
-	}
+	
 	
 	/**
-	 * Cherche une info en fonction de sa cl�
-	 * @param key
-	 * @return la valeur de l'info
-	 */
-	public String searchInfoByKey(String key) {
-		String value = null;
-		for (DicomInfo info : dicomInfos ){
-			if (info.getKey().equals(key))
-				value = info.getValue();
-		}
-		return value;
+         * Cherche l'attibut et renvoies sa valeur
+         * @param attrTag tag à cherche
+         * @return 
+         */
+	public String getAttribute (AttributeTag attrTag) {
+		return Attribute.getSingleStringValueOrEmptyString(this.attributeList, attrTag);
 	}
 	
 	
@@ -117,34 +97,10 @@ public class DicomImage extends DICOM implements Comparable<DicomImage> {
          * @return BufferedImage
          */
 	public BufferedImage getBufferedImage() {
-            Image image = this.getImage();
-            BufferedImage buffImg = new BufferedImage(image.getWidth(null), image.getHeight(null),
-        BufferedImage.TYPE_INT_RGB);
-            Graphics gr = buffImg.getGraphics();
-            gr.drawImage(image, 0, 0, null);
-            
-            
-            return buffImg;            
+           return this.srcImg.getBufferedImage();   
         }
 	
        
-        /**
-         * Renvoies l'image du fichier DICOM selon le Lookup Table demandé
-         * @return 
-         */
-        @Override
-        public Image getImage() {
-            Image image = null;
-            
-            if (this.lut == LUT_GRAY) {
-                image = super.getImage();
-            }
-            else if (this.lut == LUT_RED_HOT) {
-                image = toRedHot();
-            }
-            
-            return image;
-        }
       
 	/**
 	 * Extrait les diff�rentes informations du fichier image '.dcm'
