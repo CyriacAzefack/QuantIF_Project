@@ -2,18 +2,17 @@ package QuantIF_Project.patient;
 
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
+import QuantIF_Project.patient.exceptions.ImageSizeException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
-import java.io.DataInputStream;
+import QuantIF_Project.utils.DicomUtils;
+import com.pixelmed.dicom.DicomException;
+import com.pixelmed.dicom.TagFromName;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.dcm4che2.io.DicomInputStream;
 
 
 
@@ -27,27 +26,27 @@ public class Patient {
 	/**
 	 * Nom anonymis� du patient
 	 */
-	private String name;
+	private final String name;
 	
 	/**
 	 * ID du patient
 	 */
-	private String id;
+	private final String id;
 	
 	/**
 	 * Sexe du patient : 'M' ou 'F'
 	 */
-	private String sex;
+	private final String sex;
 	
 	/**
 	 * Age du patient
 	 */
-	private int age;
+	private final String age;
 	
 	/**
 	 * Poids du patient (en Kg)
 	 */
-	private int weight;
+	private final String weight;
 	
 	/**
 	 * Liste des images liés au patient
@@ -74,30 +73,21 @@ public class Patient {
 			throw new BadParametersException("Le chemin rentré est invalide.");
 		}
 		
-                
-               
-                
-                
-		
 		this.dicomImages = analyseDirectory(dirPath);
 		
-		//On suppose que tous les fichiers .dcm de ce r�pertoire sont li�s au m�me patient
+		//On suppose que tous les fichiers DICOM de ce répertoire sont tous liés au même patient
 		
-		this.name = this.dicomImages.get(0).searchInfoByKey("PatientsName");
+		this.name = this.dicomImages.get(0).getAttribute(TagFromName.PatientName);
 		
-		this.id = this.dicomImages.get(0).searchInfoByKey("PatientID");
+		this.id = this.dicomImages.get(0).getAttribute(TagFromName.PatientID);
 		
-		this.sex = this.dicomImages.get(0).searchInfoByKey("PatientsSex");
+		this.sex = this.dicomImages.get(0).getAttribute(TagFromName.PatientSex);
 		
 		//age sous la forme 045Y, on doit enlever le Y
-                String ageStr = this.dicomImages.get(0).searchInfoByKey("PatientsAge");
-                this.age = 0;
-                if (!ageStr.isEmpty())
-                    this.age = Integer.parseInt(ageStr.replace("Y", ""));
-		
-                String weightStr = this.dicomImages.get(0).searchInfoByKey("PatientsWeight");
-                if (!weightStr.isEmpty())
-                    this.weight = Integer.parseInt(weightStr);
+                this.age = this.dicomImages.get(0).getAttribute(TagFromName.PatientAge).replace("Y", "");
+               
+                this.weight = this.dicomImages.get(0).getAttribute(TagFromName.PatientWeight);
+               
 	}
 	
 	
@@ -129,23 +119,9 @@ public class Patient {
             return this.dicomImages.size();
         }
         
-        /**
-         * Retourne la hauteur des images du patient
-         * @return 
-         */
-        public int getImagesHeight(){
-            return this.dicomImages.get(1).getHeight();
-        }
-        
-        /**
-         * Retourne la largeur des images du patient
-         * @return 
-         */
-        public int getImagesWidth(){
-            return this.dicomImages.get(1).getWidth();
-        }
+       
 	/**
-	 * Retourne la pr�sentation d'un patient
+	 * Retourne la présentation d'un patient
          * @return 
 	 */
         @Override
@@ -162,9 +138,9 @@ public class Patient {
 	
 	/**
 	 * Parcourt le repertoire de fichiers et cree les instances de DicomImage
-	 * �à l'aide des fichier '.dcm' et les range dans l'ordre croissant des index des images
-	 * @param path
-	 * @return Une ArrayList de DicomImage : la liste des fichiers '.dcm' image li�s au patient
+	 * �à l'aide des fichier DICOM et les range dans l'ordre croissant des index des images
+	 * @param path Chemin du dossier DICOM
+	 * @return Une ArrayList de DicomImage : la liste des fichiers '.dcm' image liés au patient
 	 * @throws NotDirectoryException 
 	 * 		Levée quand le chemin fourni ne correspond pas � un repertoire
 	 * @throws DicomFilesNotFoundException
@@ -181,14 +157,49 @@ public class Patient {
 	        
 		//On parcourt le dossier de fichiers
 		if (files != null) {
+                  int sliceIndex = 0; //index de l'image dans une coupe temporelle: variant de 1 - framesPerTimeSlice
+                  int timeSliceIndex = 0; //Index de la coupe temporelle : variant de 1 - nbTimeSlices
+                  int nbTimeSlices = 0; //nombre de coupes temporelles dans le dossier patient
+                  int framesPerTimeSlice = 0; // nomes d'image par coupe temporelle
+                  boolean first = true;
                     for (File file : files) {
+                        
                         if (file.isFile()) {
-                            // Si c'est un fichier on v�rifie l'extension
-                            // On v�rifie l'extension du fichier
+                            // Si c'est un fichier on vérifie si c'est un fichier DICOM
                             
-                            if (isADicomFile(file.getAbsolutePath())) {
-                                listDI.add(new DicomImage(file.getAbsolutePath()));
-                                //System.out.println("Fichier: " + files[i].getName() + " Ajout�!");
+                            //Puis on récupère la frame à laquelle il appartient et son numéro
+                            //de coupe
+                            
+                            if (DicomUtils.isADicomFile(file)) {
+                                try {
+                                    
+                                    DicomImage dcm = new DicomImage(file);
+                                    if (first) {
+                                        first = false;
+                                        String strNbTimeSlices = dcm.getAttribute(TagFromName.NumberOfTimeSlices);
+                                        nbTimeSlices = (strNbTimeSlices.equals("N/A")) ? 0 : Integer.parseInt(strNbTimeSlices);
+                                        
+                                        String strFramesPTS = dcm.getAttribute(TagFromName.NumberOfSlices);
+                                        framesPerTimeSlice = (strFramesPTS.equals("N/A")) ? 0 : Integer.parseInt(strFramesPTS);
+                                        System.out.println("Nombre de Coupes : " + nbTimeSlices );
+                                        System.out.println("Nombre d'images par coupes  : " + framesPerTimeSlice );
+                                    }
+                                    if (nbTimeSlices != 0) {
+                                        //On trouve le numéro de frame en prenant la partie entière de la division
+                                        timeSliceIndex = ((dcm.getImageIndex()-1)/framesPerTimeSlice) + 1;
+
+                                        //si l'index image est un multiple de 74 alors on est à la dernière image d'une frame
+                                        sliceIndex = (dcm.getImageIndex()%framesPerTimeSlice == 0) ? 74 : dcm.getImageIndex()%framesPerTimeSlice; 
+
+                                        listDI.add(new DicomImage(file, timeSliceIndex , sliceIndex));
+                                    } 
+                                    else { // Si ce n'est pas une série dynamique
+                                        listDI.add(dcm);
+                                    }
+                                       
+                                } catch (DicomException | IOException ex) {
+                                    Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
+                                }
                             }
                         }
                     }
@@ -204,23 +215,41 @@ public class Patient {
                 
                 
 		return listDI;
-	}
-        
-        /**
-         * Vérifie que le fichier est bien un fichier DICOM
-         * @param absolutePath chemin du fichier
-         * @return 
-         */
-        private boolean isADicomFile(String absolutePath) {
-            boolean isADCM = false;
-            try {
-                DicomInputStream dis = new DicomInputStream(new File(absolutePath));
-                //Si on arrive à l'ouvrir, ce que c'est bon
-                isADCM = true;
-            } catch (IOException ex) {
-                //Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            return isADCM;
+	}    
+    /**
+     * Renvoie la largeur de la première image de la série du patient si
+     * toutes les images ont la même largeur, sinon envoie une erreur
+     * @return 
+     * @throws QuantIF_Project.patient.exceptions.ImageSizeException 
+     *      Levée quand toutes les images n'ont pas les mêmes tailles
+     */
+    public int getImagesWidth() throws ImageSizeException {
+        int width = this.dicomImages.get(0).getWidth();
+        for (DicomImage di : this.dicomImages) {
+            if (width != di.getWidth())
+                throw new ImageSizeException("Les images de ce patient n'ont pas tous la même taille");
         }
+        
+        return width;
+    }
+    
+    /**
+     * Renvoie la hauteru de la première image de la série du patient si
+     * toutes les images ont la même hauteru, sinon envoie une erreur
+     * @return
+     * @throws ImageSizeException
+     *      Levée quand toutes les images n'ont pas les mêmes tailles
+     */
+    public int getImagesHeight() throws ImageSizeException {
+        int height = this.dicomImages.get(0).getHeight();
+         for (DicomImage di : this.dicomImages) {
+            if (height != di.getHeight())
+                throw new ImageSizeException("Les images de ce patient n'ont pas tous la même taille");
+        }
+         
+        return height;
+    }
+    
+    
+        
 }
