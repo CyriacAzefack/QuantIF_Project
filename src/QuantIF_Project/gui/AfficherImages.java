@@ -12,10 +12,18 @@ import QuantIF_Project.patient.exceptions.BadMaskStructException;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.ImageSizeException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
+import com.pixelmed.dicom.TagFromName;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.plugin.LutLoader;
+import ij.plugin.Orthogonal_Views;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
 import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.RescaleOp;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,10 +60,24 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      */
     private Mask mask;
     
+    /**
+     * LUT en cours
+     */
+    private LUT currentLUT;
+    
+    /**
+     * Luminosité des images
+     */
+    private int brightness;
+    
+    /**
+     * facteur d'agrandissement de l'image;
+     */
+    private int scaleFactor;
     
     /**
      * Creates new form AfficherImages
-     * @param p
+     * @param p patient en cours
      * 
      */
     public AfficherImages(Patient p) {
@@ -64,19 +86,27 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         this.nbImages = p.getMaxDicomImage();
         this.currentImageID = 0;
         this.mask = null;
-    
+        this.currentLUT = LutLoader.openLut("luts\\Rainbow RGB.lut");
+        this.brightness = 1;
+        this.brightnessSlider.setValue(this.brightness);
+        
+        this.scaleFactor = 1;
+        
+        //Slider Settings
+        imageSlider.setMaximum(this.nbImages);
+        imageSlider.setMinimum(1);
+        
         try {
             display(currentImageID);
         } catch (BadParametersException ex) {
             Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        //Slider Settings
-        imageSlider.setMaximum(this.nbImages - 1);
-        imageSlider.setMinimum(0);
+        
         
         //imageIDTextField Settings
         imageIDTextField.setEditable(false);
+        
         
         
     }
@@ -99,11 +129,17 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         roiChooser = new javax.swing.JButton();
         removeROI = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
-        maxValue = new javax.swing.JTextField();
+        champ1 = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
-        minValue = new javax.swing.JTextField();
+        champ2 = new javax.swing.JTextField();
         jSeparator1 = new javax.swing.JSeparator();
-        jSeparator2 = new javax.swing.JSeparator();
+        jLabel3 = new javax.swing.JLabel();
+        champ3 = new javax.swing.JTextField();
+        orthoDisplay = new javax.swing.JButton();
+        jLabel4 = new javax.swing.JLabel();
+        champ4 = new javax.swing.JTextField();
+        jLabel5 = new javax.swing.JLabel();
+        brightnessSlider = new javax.swing.JSlider();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -111,8 +147,13 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         setClosable(true);
         setIconifiable(true);
         setMaximizable(true);
-        setTitle("Images");
+        setTitle("Viewer");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        try {
+            setSelected(true);
+        } catch (java.beans.PropertyVetoException e1) {
+            e1.printStackTrace();
+        }
         setVisible(true);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -140,6 +181,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         });
         getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 540, 980, 50));
 
+        imageIDTextField.setEditable(false);
         imageIDTextField.setText("               ");
         imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -168,19 +210,66 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         });
         getContentPane().add(removeROI, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 100, 170, 30));
 
-        jLabel1.setText("Valeur Max dans la tumeur : ");
+        jLabel1.setText("UID Study ");
         getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 40, -1, 20));
 
-        maxValue.setEditable(false);
-        getContentPane().add(maxValue, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 40, 90, -1));
+        champ1.setEditable(false);
+        getContentPane().add(champ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 40, 560, -1));
 
-        jLabel2.setText("Valeur Min dans la tumeur : ");
+        jLabel2.setText("timeSlice");
         getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 70, -1, 20));
 
-        minValue.setEditable(false);
-        getContentPane().add(minValue, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 70, 90, -1));
+        champ2.setEditable(false);
+        getContentPane().add(champ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 70, 560, -1));
         getContentPane().add(jSeparator1, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 30, 240, 10));
-        getContentPane().add(jSeparator2, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 100, 240, -1));
+
+        jLabel3.setText("slice");
+        getContentPane().add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 100, -1, 20));
+
+        champ3.setEditable(false);
+        champ3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                champ3ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(champ3, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 100, 560, -1));
+
+        orthoDisplay.setText("Affichage 3 plans");
+        orthoDisplay.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                orthoDisplayActionPerformed(evt);
+            }
+        });
+        getContentPane().add(orthoDisplay, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 233, 150, 40));
+
+        jLabel4.setText("Acquisition Time");
+        getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 140, -1, -1));
+
+        champ4.setEditable(false);
+        champ4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                champ4ActionPerformed(evt);
+            }
+        });
+        getContentPane().add(champ4, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 140, 560, -1));
+
+        jLabel5.setText("Luminosité");
+        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 200, -1, -1));
+
+        brightnessSlider.setMajorTickSpacing(10);
+        brightnessSlider.setMaximum(50);
+        brightnessSlider.setMinorTickSpacing(5);
+        brightnessSlider.setPaintLabels(true);
+        brightnessSlider.setPaintTicks(true);
+        brightnessSlider.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        brightnessSlider.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        brightnessSlider.setValueIsAdjusting(true);
+        brightnessSlider.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                brightnessSliderStateChanged(evt);
+            }
+        });
+        getContentPane().add(brightnessSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(880, 190, 570, -1));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -214,7 +303,9 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_prevButtonActionPerformed
 
     private void imageSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_imageSliderStateChanged
-        this.currentImageID = imageSlider.getValue();
+        
+        if (imageSlider.getValue() > 0)
+            this.currentImageID = imageSlider.getValue() - 1;
         try {
             // TODO add your handling code here:
             
@@ -271,7 +362,88 @@ public class AfficherImages extends javax.swing.JInternalFrame {
 
     private void removeROIActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeROIActionPerformed
         this.mask = null;
+        try {
+            display(this.currentImageID);
+        } catch (BadParametersException ex) {
+            Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_removeROIActionPerformed
+
+    private void champ3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_champ3ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_champ3ActionPerformed
+    
+    /**
+     * Affiche les 3 plans de l'image
+     * @param evt 
+     */
+    private void orthoDisplayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_orthoDisplayActionPerformed
+        try {
+            
+            IJ.run("Close All");
+            //Stack d'images à afficher
+            ImageStack imgStack = new ImageStack(this.patient.getImagesWidth(), this.patient.getImagesHeight(), null);
+            
+            ImageProcessor imgProc;
+            ImagePlus imgPlus;
+            
+            //On parcout la liste des images pour les chargés dans le stack
+            for (int i = 0; i<this.nbImages; i++) {
+                String filename = this.patient.getDicomImage(i).getAbsolutePath();
+                ImagePlus impTemp = IJ.openImage(filename);
+                imgProc = impTemp.getProcessor();
+                imgStack.addSlice(imgProc);
+            }
+            
+            imgPlus = new ImagePlus("", imgStack);
+            
+            //On enregistre le stack d'images ainsi crée dans un dossier temporaire
+            String tmpFile = "tmp/patient.tif";
+            IJ.saveAs(imgPlus, "tif", tmpFile);
+            
+            //On ouvre le stack enregistré puis on l'afficher
+            imgPlus = IJ.openImage(tmpFile);
+            imgPlus.show();
+
+            IJ.run(imgPlus, "Orthogonal Views", "");
+            Orthogonal_Views ov = Orthogonal_Views.getInstance();
+            IJ.wait(1000);
+            ImagePlus imp = ov.getXZImage();
+
+            //Coordonnées du curseur
+            int[] loc = ov.getCrossLoc();
+            int x = loc[0]; 
+            int y = loc[1]; 
+            int z = loc[2]; 
+            
+            
+            //print(x+", "+y+", "+z);
+            int width = imp.getWidth();
+            int height = imp.getHeight();
+            int depth = imp.getStackSize();
+          
+            ov.setCrossLoc(x, y, z);
+             
+             
+             
+        } catch (ImageSizeException | BadParametersException ex) {
+            Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_orthoDisplayActionPerformed
+
+    private void champ4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_champ4ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_champ4ActionPerformed
+
+    private void brightnessSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_brightnessSliderStateChanged
+        this.brightness = this.brightnessSlider.getValue();
+        //System.out.println("Valeur de luminosité : " + this.brightness);
+        try {
+            display(this.currentImageID);
+        } catch (BadParametersException ex) {
+            Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_brightnessSliderStateChanged
     
     /**
      * Affiche l'image d'id imageID dans la fenetre
@@ -280,50 +452,102 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      *      Levée lorsqu'aucune image ne correspond à imageID
      */
     private void display(int imageID) throws BadParametersException {
+        //System.out.println("Index image : " + imageID );
         DicomImage dcm = this.patient.getDicomImage(imageID);
         BufferedImage bufferedImage;
         
         //Si aucune ROI n'a été chargée, on affiche l'image de base
         if (this.mask == null) {
-            bufferedImage = dcm.getBufferedImage();
+            //bufferedImage = dcm.getBufferedImage();
+            
+            
+            
+           bufferedImage = this.applyLut(dcm, this.currentLUT);
         }
         else { // Sinon on affiche l'image avec la ROI dessus
             bufferedImage = this.mask.getImageWithROI(imageID);
         }
+        //On redimensionne l'image
+        bufferedImage = rescale(bufferedImage, 512, 512);
         
-       
-        imageLabel.setIcon(new ImageIcon(scale(bufferedImage, 512, 512)));
+        //On gere la luminosité
+        RescaleOp rescaleOp = new RescaleOp(this.brightness, 0, null);
+        
+        ImageIcon ii = new ImageIcon(rescaleOp.filter(bufferedImage, null));
+        //ImageIcon ii = new ImageIcon(bufferedImage);        
+        
+   
+        imageLabel.setIcon(ii);
         
         imageIDTextField.setText(imageID + " / " + (this.nbImages-1));
-       
+        
+        this.champ1.setText(dcm.getAttribute(TagFromName.StudyInstanceUID));
+        this.champ2.setText(""+dcm.getTimeSlice());
+        this.champ3.setText(""+dcm.getSlice());
+        this.champ4.setText(dcm.getAttribute(TagFromName.AcquisitionTime));
+        
     }
     
-    private Image scale(Image source, int width, int height) {
+    /**
+     * Redimensionne une image
+     * @param source l'image à redimensionner
+     * @param newWidth nouvelle largeur
+     * @param newHeight nouvelle hauteur
+     * @return 
+     */
+    private BufferedImage rescale(BufferedImage source, int newWidth, int newHeight) {
         /* On crée une nouvelle image aux bonnes dimensions. */ 
-        BufferedImage buf = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB); 
+        BufferedImage buf = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB); 
 
-        /* On dessine sur le Graphics de l'image bufferisée. */ 
+        
         Graphics2D g = buf.createGraphics(); 
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR); 
-        g.drawImage(source, 0, 0, width, height, null); 
-        g.dispose(); 
-
+        
+        int fWidth = newWidth/source.getWidth() ;
+        int fHeight = newHeight/source.getHeight();
+        
+        //On applique une transformation affine aux pixels
+        AffineTransform at = AffineTransform.getScaleInstance(fWidth, fHeight);
+        g.drawRenderedImage(source, at);
+        
+        
         /* On retourne l'image bufferisée, qui est une image. */ 
         return buf; 
         
     }
+    
+    /**
+     * Applique une LookUpTable à l'image DICOM
+     * @param dcm image à modifier
+     * @param lut LUT à appliquer
+     * @return BufferedImage 
+     */
+    private BufferedImage applyLut(DicomImage dcm, LUT lut) {
+        IJ.run("Close All");
+        
+        ImagePlus imp = IJ.openImage(dcm.getAbsolutePath());
+        imp.setLut(lut);
+       
+       
+        return imp.getBufferedImage();
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JSlider brightnessSlider;
+    private javax.swing.JTextField champ1;
+    private javax.swing.JTextField champ2;
+    private javax.swing.JTextField champ3;
+    private javax.swing.JTextField champ4;
     private javax.swing.JTextField imageIDTextField;
     private javax.swing.JLabel imageLabel;
     private javax.swing.JSlider imageSlider;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JSeparator jSeparator2;
     private javax.swing.JFileChooser maskFileChooser;
-    private javax.swing.JTextField maxValue;
-    private javax.swing.JTextField minValue;
     private javax.swing.JButton nextButton;
+    private javax.swing.JButton orthoDisplay;
     private javax.swing.JButton prevButton;
     private javax.swing.JButton removeROI;
     private javax.swing.JButton roiChooser;
