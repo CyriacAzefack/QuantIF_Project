@@ -7,6 +7,8 @@ import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import QuantIF_Project.utils.DicomUtils;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +55,29 @@ public class Patient {
 	 */
 	private ArrayList<DicomImage> dicomImages;
         
+        /**
+         * Nombres de coupes temporelles
+         */
+        private int nbTimeSlices;
+        
+        /**
+         * Nombres d'images par coupes temporelle
+         */
+        
+        private int framesPerTimeSlice;
+        
+        /**
+         * Liste des DicomImages rangés par coupe
+         */
+        private DicomImage[][] sortedDicomImages;
+        
+      
+        
+        /**
+         * Dit si c'est une série dynamique ou non
+         */
+        private boolean isDynamic;
+        
         
 	
 	
@@ -73,6 +98,10 @@ public class Patient {
 			throw new BadParametersException("Le chemin rentré est invalide.");
 		}
 		
+                this.nbTimeSlices = 0;
+                this.framesPerTimeSlice = 0;
+                
+                this.sortedDicomImages = null;
 		this.dicomImages = analyseDirectory(dirPath);
 		
 		//On suppose que tous les fichiers DICOM de ce répertoire sont tous liés au même patient
@@ -87,8 +116,14 @@ public class Patient {
                 this.age = this.dicomImages.get(0).getAttribute(TagFromName.PatientAge).replace("Y", "");
                
                 this.weight = this.dicomImages.get(0).getAttribute(TagFromName.PatientWeight);
-               
+                
+                
+                
 	}
+
+    public DicomImage[][] getSortedDicomImages() {
+        return sortedDicomImages;
+    }
 	
 	
 	
@@ -139,6 +174,8 @@ public class Patient {
 	/**
 	 * Parcourt le repertoire de fichiers et cree les instances de DicomImage
 	 * �à l'aide des fichier DICOM et les range dans l'ordre croissant des index des images
+         * et attribue à chaque DicomImage un sliceIndex et timeSlice Index pour les séries 
+         * dynamiques puis range les BufferedImage dans la variable d'instance sortedImages
 	 * @param path Chemin du dossier DICOM
 	 * @return Une ArrayList de DicomImage : la liste des fichiers '.dcm' image liés au patient
 	 * @throws NotDirectoryException 
@@ -148,7 +185,7 @@ public class Patient {
 	 */
 	
 	private ArrayList<DicomImage> analyseDirectory(String path) throws NotDirectoryException, DicomFilesNotFoundException {
-		ArrayList<DicomImage> listDI = new ArrayList<DicomImage>();
+		ArrayList<DicomImage> listDI = new ArrayList<>();
 		File dir = new File(path);
 		if (!dir.isDirectory()) {
 			throw new NotDirectoryException("Le chemin '" + path + "' n'est pas un répertoire");
@@ -157,10 +194,9 @@ public class Patient {
 	        
 		//On parcourt le dossier de fichiers
 		if (files != null) {
-                  int sliceIndex = 0; //index de l'image dans une coupe temporelle: variant de 1 - framesPerTimeSlice
+                  int frameIndex = 0; //index de l'image dans une coupe temporelle: variant de 1 - framesPerTimeSlice
                   int timeSliceIndex = 0; //Index de la coupe temporelle : variant de 1 - nbTimeSlices
-                  int nbTimeSlices = 0; //nombre de coupes temporelles dans le dossier patient
-                  int framesPerTimeSlice = 0; // nomes d'image par coupe temporelle
+                 
                   boolean first = true;
                     for (File file : files) {
                         
@@ -174,7 +210,9 @@ public class Patient {
                                 try {
                                     
                                     DicomImage dcm = new DicomImage(file);
+                                    //On récupère les paramètres de la série sur le premier fichier
                                     if (first) {
+                                        this.isDynamic = true;
                                         first = false;
                                         String strNbTimeSlices = dcm.getAttribute(TagFromName.NumberOfTimeSlices);
                                         nbTimeSlices = (strNbTimeSlices.equals("N/A")) ? 0 : Integer.parseInt(strNbTimeSlices);
@@ -183,19 +221,28 @@ public class Patient {
                                         framesPerTimeSlice = (strFramesPTS.equals("N/A")) ? 0 : Integer.parseInt(strFramesPTS);
                                         System.out.println("Nombre de Coupes : " + nbTimeSlices );
                                         System.out.println("Nombre d'images par coupes  : " + framesPerTimeSlice );
+                                        
+                                        this.sortedDicomImages = new DicomImage[nbTimeSlices][framesPerTimeSlice];
                                     }
+                                    
                                     if (nbTimeSlices != 0) {
+                                        
+                                        this.isDynamic = false;
+                                        
                                         //On trouve le numéro de frame en prenant la partie entière de la division
                                         timeSliceIndex = ((dcm.getImageIndex()-1)/framesPerTimeSlice) + 1;
 
-                                        //si l'index image est un multiple de 74 alors on est à la dernière image d'une frame
-                                        sliceIndex = (dcm.getImageIndex()%framesPerTimeSlice == 0) ? 74 : dcm.getImageIndex()%framesPerTimeSlice; 
-
-                                        listDI.add(new DicomImage(file, timeSliceIndex , sliceIndex));
+                                        //si l'index image est un multiple de 74 alors on est à la dernière image d'une coupe
+                                        frameIndex = (dcm.getImageIndex()%framesPerTimeSlice == 0) ? 74 : dcm.getImageIndex()%framesPerTimeSlice; 
+                                        DicomImage dcmToAdd = new DicomImage(file, timeSliceIndex , frameIndex);
+                                        listDI.add(dcmToAdd);
+                                        this.sortedDicomImages[timeSliceIndex-1][frameIndex-1] = dcmToAdd;
                                     } 
                                     else { // Si ce n'est pas une série dynamique
+                                        this.isDynamic = false;
                                         listDI.add(dcm);
                                     }
+                                    
                                        
                                 } catch (DicomException | IOException ex) {
                                     Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
@@ -203,10 +250,13 @@ public class Patient {
                             }
                         }
                     }
+                    
+                    
+                    
 		}
                
 		
-		//On v�rifie si la liste n'est pas vide
+		//On vérifie si la liste n'est pas vide
 		if (listDI.isEmpty()) {
 			throw new DicomFilesNotFoundException("Aucun fichier DICOM n'a été trouvé dans ce repertoire");
 		}
@@ -216,6 +266,8 @@ public class Patient {
                 
 		return listDI;
 	}    
+        
+        
     /**
      * Renvoie la largeur de la première image de la série du patient si
      * toutes les images ont la même largeur, sinon envoie une erreur
@@ -248,6 +300,80 @@ public class Patient {
         }
          
         return height;
+    }
+    
+    /**
+     * Somme les images d'une coupe temporelle à l'autre
+     * @param startSlice indice de la coupe temporellle de déaprt
+     * @param endSlice indice de la coupe temporelle de fin
+     * @return 
+     */
+    
+    public BufferedImage[] summSlices(int startSlice, int endSlice) {
+        //Tableau contenant les images sommés
+        BufferedImage[] summImagesArray = new BufferedImage[this.framesPerTimeSlice];
+        //Image avec les bonnes dimensions : à re remplir
+        BufferedImage resultSumm = this.sortedDicomImages[startSlice][0].getBufferedImage();
+        
+        int width = resultSumm.getWidth();
+        int height = resultSumm.getHeight();
+        //On parcourt toutes les images de la coupe temporelle d'index startSlice
+        for (int frameIndex = 0; frameIndex < this.framesPerTimeSlice; frameIndex++) {
+            //Pour chaque de ces images on la somme avec ceux des coupes allant de startSlice à endSlice
+            
+            resultSumm = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
+            Graphics2D gResultSumm = resultSumm.createGraphics();
+            
+            int[][] data = new int[width][height];
+            
+            BufferedImage buffToSumm = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
+            Graphics2D gBuffToSumm = buffToSumm.createGraphics();
+            for (int sliceIndex = startSlice ; sliceIndex <= endSlice; sliceIndex++) {
+                DicomImage dcmToSumm = this.sortedDicomImages[sliceIndex][frameIndex];
+                
+                if (dcmToSumm != null) {
+                    gBuffToSumm.drawImage(dcmToSumm.getBufferedImage(), null, 0, 0); 
+                    for (int row = 0; row<width; ++row) {
+                        for (int col = 0; col < height; ++col ) {
+                            int rgb = buffToSumm.getRGB(row, col);
+                            int red = ((rgb >> 16) & 0xFF)/(endSlice - startSlice + 1);
+                            int green = ((rgb >> 8) & 0xFF)/(endSlice - startSlice + 1);
+                            int blue = (rgb & 0xFF)/(endSlice - startSlice + 1);
+                            
+                            int pix = ((red&0x0ff)<<16)|((green&0x0ff)<<8)|(blue&0x0ff);
+                            data[row][col] += pix; // on ajoute une la part du pixel apporté par chaque frame
+                            
+                            //System.out.println("fraction : " + pix/(endSlice - startSlice + 1));
+                        }
+                    }
+                }
+                
+            }
+            // on remplit la l'image resulat de la somme
+            for (int r = 0; r<width; ++r) {
+                for (int c =0; c < height; ++c ) {
+                    resultSumm.setRGB(r, c, data[r][c]);
+                    //System.out.println(data[r][c]);
+                }
+            }
+            gResultSumm.dispose();
+            summImagesArray[frameIndex] = resultSumm;
+        }   
+         
+        System.out.println("Somme de " + (startSlice + 1)  + " à " + (endSlice + 1) + " faite!!!");
+        return summImagesArray;
+    }
+    
+   
+    
+   
+   
+    public int getNbTimeSlices() {
+        return this.nbTimeSlices;
+    }
+    
+    public int getFramesPerTimeSlice() {
+        return this.framesPerTimeSlice;
     }
     
     
