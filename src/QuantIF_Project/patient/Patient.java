@@ -9,6 +9,8 @@ import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferUShort;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -122,6 +124,7 @@ public class Patient {
 	}
 
     public DicomImage[][] getSortedDicomImages() {
+       
         return sortedDicomImages;
     }
 	
@@ -310,13 +313,23 @@ public class Patient {
      */
     
     public BufferedImage[] summSlices(int startSlice, int endSlice) {
+        
         //Tableau contenant les images sommés
         BufferedImage[] summImagesArray = new BufferedImage[this.framesPerTimeSlice];
         //Image avec les bonnes dimensions : à re remplir
-        BufferedImage resultSumm = this.sortedDicomImages[startSlice][0].getBufferedImage();
         
-        int width = resultSumm.getWidth();
-        int height = resultSumm.getHeight();
+        BufferedImage resultSumm;
+        
+        int width = 0;
+        int height = 0;
+            try {
+                width = this.getImagesWidth();
+                height = this.getImagesHeight();
+            } catch (ImageSizeException ex) {
+                Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        
+        int maxGraylvl = 0;
         //On parcourt toutes les images de la coupe temporelle d'index startSlice
         for (int frameIndex = 0; frameIndex < this.framesPerTimeSlice; frameIndex++) {
             //Pour chaque de ces images on la somme avec ceux des coupes allant de startSlice à endSlice
@@ -324,42 +337,60 @@ public class Patient {
             resultSumm = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
             Graphics2D gResultSumm = resultSumm.createGraphics();
             
-            int[][] data = new int[width][height];
+            short[] resultPix = ((DataBufferUShort) resultSumm.getRaster().getDataBuffer()).getData();
             
-            BufferedImage buffToSumm = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
-            Graphics2D gBuffToSumm = buffToSumm.createGraphics();
+            
             for (int sliceIndex = startSlice ; sliceIndex <= endSlice; sliceIndex++) {
                 DicomImage dcmToSumm = this.sortedDicomImages[sliceIndex][frameIndex];
-                
                 if (dcmToSumm != null) {
-                    gBuffToSumm.drawImage(dcmToSumm.getBufferedImage(), null, 0, 0); 
+                    
+                    //Comme on ne connait pas le type de l'image à sommer, à la dessine dans un 
+                    //BufferedImage de type USHORT_GRAY
+                    BufferedImage buffToSumm = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
+                    Graphics2D gBuffToSumm = buffToSumm.createGraphics();
+                    gBuffToSumm.drawImage(dcmToSumm.getBufferedImage(), null, 0, 0);
+                    
+                    short[] buffPix = ((DataBufferUShort) buffToSumm.getRaster().getDataBuffer()).getData();
+                    
+                    //System.out.println("Type de l'image à sommer : " + buffToSumm.getType());
+                    //Raster rast = buffToSumm.getRaster();
                     for (int row = 0; row<width; ++row) {
                         for (int col = 0; col < height; ++col ) {
-                            int rgb = buffToSumm.getRGB(row, col);
-                            int red = ((rgb >> 16) & 0xFF)/(endSlice - startSlice + 1);
-                            int green = ((rgb >> 8) & 0xFF)/(endSlice - startSlice + 1);
-                            int blue = (rgb & 0xFF)/(endSlice - startSlice + 1);
+                            resultPix[row * width + col] += (buffPix[row * width + col]/(endSlice - startSlice + 1));
                             
-                            int pix = ((red&0x0ff)<<16)|((green&0x0ff)<<8)|(blue&0x0ff);
-                            data[row][col] += pix; // on ajoute une la part du pixel apporté par chaque frame
+                          
                             
-                            //System.out.println("fraction : " + pix/(endSlice - startSlice + 1));
+                            if (maxGraylvl <  resultPix[row * width + col]) {
+                                maxGraylvl =  resultPix[row * width + col];
+                            }
+                            
+                           
                         }
+                        gBuffToSumm.dispose();
                     }
                 }
                 
             }
+            //On doit recuperer le max
+           
             // on remplit la l'image resulat de la somme
+            
             for (int r = 0; r<width; ++r) {
                 for (int c =0; c < height; ++c ) {
-                    resultSumm.setRGB(r, c, data[r][c]);
+                        //resultPix[r * width + c] =  (short) (resultPix[r * width + c] * 65535/maxGraylvl); //65535 short max value
+                        
+                   
                     //System.out.println(data[r][c]);
                 }
             }
+            WritableRaster raster = resultSumm.getRaster();
+            raster.setDataElements(0, 0, width, height, resultPix);
+            resultSumm.setData(raster);
+                    
             gResultSumm.dispose();
             summImagesArray[frameIndex] = resultSumm;
         }   
-         
+        System.out.println("Max gray level = " + maxGraylvl);
         System.out.println("Somme de " + (startSlice + 1)  + " à " + (endSlice + 1) + " faite!!!");
         return summImagesArray;
     }
