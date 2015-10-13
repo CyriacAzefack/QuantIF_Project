@@ -10,12 +10,13 @@ import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import QuantIF_Project.patient.Patient;
+import ij.IJ;
 import java.awt.Component;
 import java.io.File;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.UnsupportedLookAndFeelException;
 
 
 
@@ -37,6 +38,9 @@ public class main_window extends javax.swing.JFrame {
     public main_window() {
         initComponents();
         this.patient = null;
+        //On ferme toutes instances de IJ
+        IJ.run("Close All");
+        
         
     }
 
@@ -68,12 +72,13 @@ public class main_window extends javax.swing.JFrame {
         jMenu2 = new javax.swing.JMenu();
         displayImagesMenu = new javax.swing.JMenuItem();
 
-        fileChooser.setCurrentDirectory(new java.io.File("C:\\Users\\Cyriac\\Google Drive"));
         fileChooser.setDialogTitle("Selectionner un dossier patient");
-        fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
+        fileChooser.setFileHidingEnabled(false);
+        fileChooser.setFileSelectionMode(javax.swing.JFileChooser.FILES_AND_DIRECTORIES);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("QuantIF_Project");
+        setAutoRequestFocus(false);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         jButton1.setText("PATLAK");
@@ -133,6 +138,11 @@ public class main_window extends javax.swing.JFrame {
                 .addContainerGap(48, Short.MAX_VALUE))
         );
 
+        jScrollPane1.setFocusable(false);
+        jScrollPane1.setOpaque(false);
+        jScrollPane1.setRequestFocusEnabled(false);
+        jScrollPane1.setVerifyInputWhenFocusTarget(false);
+
         patientDescriptTextField.setEditable(false);
         patientDescriptTextField.setColumns(20);
         patientDescriptTextField.setFont(new java.awt.Font("Monospaced", 1, 13)); // NOI18N
@@ -155,7 +165,7 @@ public class main_window extends javax.swing.JFrame {
                         .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(697, Short.MAX_VALUE))
+                .addContainerGap(1249, Short.MAX_VALUE))
         );
         desktopLayout.setVerticalGroup(
             desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -168,7 +178,7 @@ public class main_window extends javax.swing.JFrame {
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(113, Short.MAX_VALUE))
+                .addContainerGap(306, Short.MAX_VALUE))
         );
         desktop.setLayer(jPanel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
@@ -252,18 +262,24 @@ public class main_window extends javax.swing.JFrame {
         if (this.patient != null)
             this.closePatientMenuActionPerformed(evt);
         
-        int returnVal = fileChooser.showOpenDialog(this);
         this.patientDescriptTextField.setText("Ouverture du patient en cours...");
+        int returnVal = fileChooser.showOpenDialog(this);
+        
         if (JFileChooser.APPROVE_OPTION == returnVal) {
             
-            File directory;
-            directory = fileChooser.getSelectedFile();
+            File choosenFile;
+            choosenFile = fileChooser.getSelectedFile();
            
             // Un fois le dossier choisi
             
-            if (directory != null) {
-               
-                String patientDirPath = directory.getAbsolutePath();
+            if (choosenFile != null) {
+                String patientDirPath;
+                if (choosenFile.isDirectory()) {
+                    patientDirPath = choosenFile.getAbsolutePath();
+                }
+                else {
+                    patientDirPath = choosenFile.getParent();
+                }
                 
                 
                 //On peut créer un nouveau patient
@@ -299,10 +315,15 @@ public class main_window extends javax.swing.JFrame {
     }//GEN-LAST:event_openPatientMenuActionPerformed
 
     private void displayImagesMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_displayImagesMenuActionPerformed
+        
         if (this.patient != null) {
+            
             AfficherImages ai = new AfficherImages(this.patient);
-            desktop.add(ai);
             ai.show();
+            desktop.add(ai);
+            
+            
+            
         }
         else {
             JOptionPane.showMessageDialog(null, "Aucun patient sélectionné ", "Erreur", JOptionPane.ERROR_MESSAGE);
@@ -340,22 +361,16 @@ public class main_window extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(main_window.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(main_window.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(main_window.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(main_window.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
+        
+        //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new main_window().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new main_window().setVisible(true);
         });
     }
 

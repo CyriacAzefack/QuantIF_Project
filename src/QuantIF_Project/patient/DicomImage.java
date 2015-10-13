@@ -6,11 +6,7 @@ import com.pixelmed.dicom.AttributeTag;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.display.SourceImage;
-import java.util.ArrayList;
-import java.util.Properties;
-
-import java.awt.Graphics;
-import java.awt.Image;
+import ij.io.Opener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -19,8 +15,13 @@ import java.io.IOException;
  * @author Cyriac
  *
  */
-public class DicomImage implements Comparable<DicomImage> {
+public final class DicomImage implements Comparable<DicomImage> {
 	
+        /***
+         * Opener de fichier DICOM
+         */
+         private Opener opener; 
+    
 	/**
 	 * Metadata contenu dans le fichier DICOM
 	 */
@@ -31,54 +32,94 @@ public class DicomImage implements Comparable<DicomImage> {
 	 */
 	private final File dicomFile;
         
+        /**
+         * Image 
+         */
         private SourceImage srcImg;
+        /**
+         * Index de la coupe temporelle dans laquelle se trouve l'image
+         */
+        private int timeSlice;
         
-	
+        /**
+         * Index de l'image dans la coupe temporelle dans laquelle elle se trouve
+         */
+	private int slice;
+        
 	/**
 	 * On cree une instance de DicomImage
          * @param file fichier DICOM
          * @throws com.pixelmed.dicom.DicomException
+         *      Quand le fichier n'est pas un fichier DICOM
          * @throws java.io.IOException
+         *      Erreur de lecture/Ecriture du fichier
 	 */
 	public DicomImage(File file) throws DicomException, IOException {
             if (!DicomUtils.isADicomFile(file)) 
                 throw new DicomException("Le fichier " + file.getName() + " n'est pas un fichier DICOM");
             
+            
+            opener = new Opener();
             this.dicomFile = file;
                     
             this.attributeList = new AttributeList();            
             this.attributeList.read(file.getAbsolutePath());
             
+           
             this.srcImg = new SourceImage(file.getAbsolutePath());
-               
-		
+            
+         
+           
+            this.timeSlice = 0;
+            this.slice = 0;
+            
 	}
 	
-	/**
-	 * Renvoies le numero d'id de l'image
-	 * @return
+        /**
+	 * On cree une instance de DicomImage avec son numéro d'acquisition
+         * dans le temps
+         * @param file fichier DICOM
+         * @param timeSlice Index de la coupe temporelle dans laquelle se trouve l'image
+         * @param slice Index de l'image dans la coupe temporelle dans laquelle elle se trouve
+         *
+         * @throws com.pixelmed.dicom.DicomException
+         *      Quand le fichier n'est pas un fichier DICOM
+         * @throws java.io.IOException
+         *      Erreur de lecture/Ecriture du fichier
 	 */
+        public DicomImage(File file, int timeSlice, int slice) throws DicomException, IOException {
+            this(file);
+            this.timeSlice = timeSlice;
+            this.slice = slice;
+        }
+        
+       
+	
 	public int getImageIndex() {
 		return Integer.parseInt(this.getAttribute(TagFromName.ImageIndex)); 
 	}
 	
+        
 	
 	
 	/**
          * Cherche l'attibut et renvoies sa valeur
          * @param attrTag tag à cherche
-         * @return 
+         * @return la valeur du tag 
          */
 	public String getAttribute (AttributeTag attrTag) {
-		return Attribute.getSingleStringValueOrEmptyString(this.attributeList, attrTag);
+            String str = Attribute.getSingleStringValueOrEmptyString(this.attributeList, attrTag);
+            if (str.isEmpty())
+                str = "0";
+            return str;
 	}
 	
 	
 	/**
 	 * Compare deux images en fonction de leur numero d'index.
 	 * Renvoies un nombre n�gatif si l'image passé en paramètre est aprés l'image objet et un nombre positif sinon.
-	 * @param dcmImage
-	 * @return
+	 * @param dcmImage image à comparer
+	 * @return un nombre négatif si l'index de l'image passé en paramètre est supérieur et un nombre positif sinon
 	 */
         @Override
 	public int compareTo(DicomImage dcmImage) {
@@ -97,49 +138,36 @@ public class DicomImage implements Comparable<DicomImage> {
          * @return BufferedImage
          */
 	public BufferedImage getBufferedImage() {
-           return this.srcImg.getBufferedImage();   
+          
+           return this.srcImg.getBufferedImage();
         }
+
+    public int getWidth() {
+        return this.srcImg.getWidth();
+    }
+
+    public int getHeight() {
+        return this.srcImg.getHeight();
+    }
+    
+    
+    public String getAbsolutePath() {
+        return this.dicomFile.getAbsolutePath();
+    }
+    
+    
+    public int getTimeSlice() {
+        return this.timeSlice;
+    }
+    
+    
+    public int getSlice() {
+        return this.slice;
+    }
+    
 	
        
-      
-	/**
-	 * Extrait les diff�rentes informations du fichier image '.dcm'
-	 * @return ArrayList de DicomInfo
-	 */
-	private ArrayList<DicomInfo> extractInfos() {
-		ArrayList<DicomInfo> infos = new ArrayList<>();
-		
-		Properties prop = this.getProperties();
-		String infoString = prop.getProperty("Info");
-		
-		//On doit maintenant parser ce string 'infos' pour pouvoir r�cup�rer tous les tags
-		String[] datas = infoString.split("\n");
-		for (String data:datas) {
-			try {
-				infos.add(new DicomInfo(data));
-			} catch (Exception e) {
-			
-				e.printStackTrace();
-			}
-		}		
-		return infos;
-		
-	}
-
-    private Image toRedHot() {
-        throw new UnsupportedOperationException("Pas encore implémenté"); //To change body of generated methods, choose Tools | Templates.
-    }
-        
-        
-
-	
-	
-	
-	
-	
-	
-	
-	
+  
 	
 }
 

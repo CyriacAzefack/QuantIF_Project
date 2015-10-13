@@ -8,6 +8,7 @@ package QuantIF_Project.mask;
 import QuantIF_Project.patient.Patient;
 import QuantIF_Project.patient.exceptions.BadMaskStructException;
 import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.patient.exceptions.ImageSizeException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -22,7 +23,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JFrame;
 
 /**
  *
@@ -75,15 +75,20 @@ public class Mask {
 
     /**
      * Cree un masque pour une ROI prédéfinie
-     * @param patient
-     * @param maskDirPath
+     * @param patient patient sur lequel sera appliqué le masque
+     * @param maskDirPath repertoire où se trouve les images du masque
      * @throws BadParametersException 
      *      Levée quand le patient ou le chemin du dossier du masque est invalide
      *      Ou quand le
+     * @throws QuantIF_Project.patient.exceptions.ImageSizeException
+     *      Levée quand les images du dossier patient n'ont pas la même taille
      * @throws NotDirectoryException 
      *      Levée quand le chemin fourni n'est pas un dossier
+     * @throws QuantIF_Project.patient.exceptions.BadMaskStructException
+     *      Levée quand la structure du masque ne comporte pas assez ou trop de 
+     * fichiers comparé au dossier patient
      */
-    public Mask(Patient patient, String maskDirPath) throws BadParametersException, NotDirectoryException, BadMaskStructException {
+    public Mask(Patient patient, String maskDirPath) throws BadParametersException, ImageSizeException, NotDirectoryException, BadMaskStructException {
         if (patient == null)
             throw new BadParametersException("Patient invalide'");
         if (maskDirPath == null)
@@ -92,12 +97,12 @@ public class Mask {
         this.path = maskDirPath;
         this.patient = patient;
         this.width = patient.getImagesWidth();
-        this.height = patient.getImagesHeight();
+        this.height = patient.getHeight();
         
         this.maskImages = getMaskImages(maskDirPath);
         
-        if(maskImages.size() < patient.getMaxDicomImage())
-            throw new BadMaskStructException("Cette structure de masque ne peut s'appliquer à ce patient car pas assez de fichiers!!");
+        if(maskImages.size() != patient.getMaxDicomImage())
+            throw new BadMaskStructException("Cette structure de masque ne peut s'appliquer à ce patient car nombre de fichiers différents");
         
         this.maxImagesWithMask = new int[maskImages.size()];
         this.minImagesWithMask = new int[maskImages.size()];
@@ -112,8 +117,8 @@ public class Mask {
     
     /**
      * Applique le masque à l'image passé en paramètre
-     * @param imageIndex
-     * @return 
+     * @param imageIndex l'index de l'image avec le ROI
+     * @return BufferedImage avec le mask
      * @throws QuantIF_Project.patient.exceptions.BadParametersException 
      *      Levée quand l'index est invalide
      */
