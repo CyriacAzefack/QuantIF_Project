@@ -98,7 +98,10 @@ public class TimeFrame implements Comparable<TimeFrame>{
                     this.width + "x" + this.height );
         int imageIndex;
         if (this.nbMaxDicomImages != 0) {
-            imageIndex = di.getImageIndex()%this.nbMaxDicomImages;
+            imageIndex = di.getImageIndex()%this.nbMaxDicomImages - 1;
+            if (imageIndex == -1)
+                imageIndex = this.nbMaxDicomImages - 1;
+                
         }
         else {
             imageIndex = di.getImageIndex();

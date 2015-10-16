@@ -6,9 +6,9 @@ import QuantIF_Project.patient.exceptions.ImageSizeException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
 import QuantIF_Project.patient.exceptions.TimeFrameOverflowException;
 import QuantIF_Project.utils.DicomUtils;
+import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
-import ij.process.FloatProcessor;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferUShort;
@@ -125,7 +125,25 @@ public class Patient {
 
             this.timeFrames = new ArrayList<>(this.nbTimeFrames);
             checkTimeFrames(dicomImages);
-
+            
+           /*
+            String outputDirDyn1 = "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\Test Multi acquisitions\\TEPDyn1\\";
+            String outputDirDyn2 = "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\Test Multi acquisitions\\TEPDyn2\\";
+            String outputDirStatic = "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\Test Multi acquisitions\\TEPStatic\\";
+            //On vide les répertoires
+            DicomUtils.emptyDirectory(new File(outputDirDyn1));
+            DicomUtils.emptyDirectory(new File(outputDirDyn2));
+            DicomUtils.emptyDirectory(new File(outputDirStatic));
+            try {
+                createSubDynAcquisition(outputDirDyn1, 0, 7);
+                createSubDynAcquisition(outputDirDyn2, 27, 33);
+                createSubDynAcquisition(outputDirStatic, 20);
+            } catch (DicomException | IOException ex) {
+                Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            */
+            
+            
                 
 	}
 
@@ -244,6 +262,8 @@ public class Patient {
             });
             
             System.out.println(this.timeFrames.size() + " Coupes détectées!!");
+            this.nbTimeFrames = this.timeFrames.size();
+            
         }
     
     
@@ -263,14 +283,15 @@ public class Patient {
      * @return Un tableau contenant la somme des images
      */
     
-    public BufferedImage[] summSlices(int startSlice, int endSlice) {
+    public float[][] summSlices(int startSlice, int endSlice) {
         
         //Tableau contenant les images sommés
-        BufferedImage[] summImagesArray = new BufferedImage[this.nbImagesPerTimeFrame];
+        float[][] summImagesArray = new float[this.nbImagesPerTimeFrame][width*height];
         //Image avec les bonnes dimensions : à re remplir
         
         BufferedImage resultSumm;
         
+        float max = 0;
         
         
         //On parcourt toutes les images de la coupe temporelle d'index startSlice
@@ -283,9 +304,9 @@ public class Patient {
             //tableau contenant les valeurs des pixels de l'image resultSumm en SHORT
             
             
-            //On cree un tableau de mm taille mais en INT, car la somme des pixels risque de dépasser
+            //On cree un tableau de mm taille mais en float, car la somme des pixels risque de dépasser
             //la taille max du format SHORT
-            int[] pixels = new int[width*height];
+            float[] pixels = new float[width*height];
             
             for (int sliceIndex = startSlice ; sliceIndex <= endSlice; sliceIndex++) {
                 try {
@@ -310,6 +331,8 @@ public class Patient {
                                     pix = 65536 + pix;
                                 }
                                 pixels[row * width + col] += pix;
+                                if (max < pixels[row * width + col])
+                                    max = pixels[row * width + col];
                                 
                             }
                             gBuffToSumm.dispose();
@@ -322,15 +345,21 @@ public class Patient {
                 
             }
            
-            // On crée l'image avec les valeurs de pixels résultant de la somme
-            FloatProcessor fp = new FloatProcessor(width, height , pixels );
             
-            summImagesArray[imageIndex] = fp.getBufferedImage();
+            
+            summImagesArray[imageIndex] = pixels;
         }   
-        
+        System.out.println("Max Value : " + max);
         System.out.println("Somme de " + (startSlice + 1)  + " à " + (endSlice + 1) + " faite!!!");
-        //Affichage de la somme par IJ
-        DicomUtils.showImages(summImagesArray);
+        
+        //Affichage de la somme 
+        /*
+        try {
+            DicomUtils.showImages(summImagesArray);
+        } catch (BadParametersException ex) {
+            Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+                */
         return summImagesArray;
         
     }
@@ -361,6 +390,92 @@ public class Patient {
             str += "-Poids : " + this.weight + " Kg\n";
 
             return str;
+    }
+
+    public String getPixelUnity() {
+        String unit = null;
+            try {
+                unit = this.timeFrames.get(0).getDicomImage(0).getAttribute(TagFromName.Units);
+            } catch (BadParametersException ex) {
+                Logger.getLogger(Patient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        return unit;
+    }
+    
+    /**
+     * Crée une acquisition TEP Dynamique DICOM à partir du patient courant
+     * @param outputDir repertoire où seront crées les images DICOM
+     * @param startIndex index de TimeFrame de début
+     * @param endIndex index de TimeFrame de fin
+     * @throws BadParametersException 
+     * @throws DicomException
+     * @throws IOException 
+     */
+    private void createSubDynAcquisition(String outputDir, int startIndex, int endIndex) throws BadParametersException, DicomException, IOException  {
+        
+        AttributeList list;
+        TimeFrame tf;
+        DicomImage dcm ;
+        File file;
+        String filePath;
+        String transferSyntaxUID = "1.2.840.10008.1.2"; //Implicit VR Endian: Default Transfer Syntax for DICOM
+        for (int frameIndex = startIndex; frameIndex < endIndex; frameIndex++) {
+            tf = this.timeFrames.get(frameIndex);
+            
+            for (int imageIndex = 0; imageIndex<tf.size(); imageIndex++) {
+                //Pour chaque image on recupére l'entête
+               
+                dcm = tf.getDicomImage(imageIndex);
+                if (dcm != null) {
+                    list = dcm.getAttributeList();
+                    //On remplace le nombre de time frame dans l'entete des nouveaus images dicom
+                    list.replaceWithValueIfPresent(TagFromName.NumberOfTimeSlices, Integer.toString(endIndex-startIndex));
+                    //On crée le fichier ou sera sauvé la nouvelle image DICOM
+                    filePath = outputDir + "IM"+ (frameIndex+1) +"."+(imageIndex+1);
+                    file = new File(filePath);
+
+                    list.write(file, transferSyntaxUID, true, true);
+                }
+                
+            }
+        }
+        
+        System.out.println("Sous Série dynamique de la coupe " + startIndex + " à " + endIndex + " crée avec succès dans \""+outputDir+"\"");
+       
+    }
+    
+    /**
+     * Crée une acquisition statique à partir du patient courant
+     * @param outputDir repertoire où seront crées les images DICOM
+     * @param frameIndex index de la time frame 
+     * @throws BadParametersException
+     * @throws IOException
+     * @throws DicomException 
+     */
+    private void createSubDynAcquisition(String outputDir, int frameIndex) throws BadParametersException, IOException, DicomException {
+        AttributeList list;
+        TimeFrame tf = this.timeFrames.get(frameIndex);
+        DicomImage dcm ;
+        File file;
+        String filePath;
+        String transferSyntaxUID = "1.2.840.10008.1.2"; //Implicit VR Endian: Default Transfer Syntax for DICOM
+        for (int imageIndex = 0; imageIndex<tf.size(); imageIndex++) {
+            //Pour chaque image on recupére l'entête
+
+            dcm = tf.getDicomImage(imageIndex);
+            if (dcm != null) {
+                list = dcm.getAttributeList();
+                //On remplace le nombre de time frame dans l'entete des nouveaus images dicom
+                list.replaceWithValueIfPresent(TagFromName.NumberOfTimeSlices, Integer.toString(0));
+                //On crée le fichier ou sera sauvé la nouvelle image DICOM
+                filePath = outputDir + "IM"+ (frameIndex+1) +"."+(imageIndex+1);
+                file = new File(filePath);
+
+                list.write(file, transferSyntaxUID, true, true);
+            }
+                
+         }
+        System.out.println("Sous Série statique de la coupe " + frameIndex + " crée avec succès dans \""+outputDir+"\"");
     }
         
 }

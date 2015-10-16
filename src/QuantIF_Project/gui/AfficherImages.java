@@ -11,6 +11,7 @@ import QuantIF_Project.patient.DicomImage;
 import QuantIF_Project.patient.Patient;
 import QuantIF_Project.patient.TimeFrame;
 import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.utils.DicomUtils;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -19,15 +20,17 @@ import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.LutLoader;
 import ij.plugin.frame.RoiManager;
+import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.LUT;
 import ij.process.ShortProcessor;
 import java.awt.BorderLayout;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Window;
 import java.awt.event.ActionListener;
-import java.awt.geom.AffineTransform;
+import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
-import java.awt.image.RescaleOp;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,6 +93,12 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      */
     private int nbTimeSlices;
     
+    private String pixelUnity;
+    
+    /**
+     * Taille de l'image affichée
+     */
+    private final static int IMAGE_SIZE = 600;
     /**
      * Creates new form AfficherImages
      * @param p patient en cours
@@ -97,9 +106,11 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      */
     public AfficherImages(Patient p) {
         initComponents();
+        
+        
         this.patient = p;
         //this.nbImages = p.getMaxDicomImage();
-        
+        this.pixelUnity = p.getPixelUnity();
         this.currentImageID = 0;
         
         
@@ -186,15 +197,15 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         summButton = new javax.swing.JToggleButton();
         sliderMin = new javax.swing.JSlider();
         jLabel7 = new javax.swing.JLabel();
+        saveSummsButton = new javax.swing.JButton();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
-        setClosable(true);
-        setIconifiable(true);
-        setMaximizable(true);
+        setBorder(null);
         setTitle("Viewer");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        setFocusable(false);
         try {
             setSelected(true);
         } catch (java.beans.PropertyVetoException e1) {
@@ -209,7 +220,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 nextButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 530, 50, 40));
+        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(840, 610, 50, 40));
 
         prevButton.setText("<<");
         prevButton.addActionListener(new java.awt.event.ActionListener() {
@@ -217,7 +228,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 prevButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 530, 50, 40));
+        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 610, 50, 40));
 
         imageSlider.setPaintLabels(true);
         imageSlider.setPaintTicks(true);
@@ -230,7 +241,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 imageSliderStateChanged(evt);
             }
         });
-        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 580, 550, 50));
+        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 670, 550, 50));
 
         imageIDTextField.setEditable(false);
         imageIDTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
@@ -240,32 +251,32 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 imageIDTextFieldActionPerformed(evt);
             }
         });
-        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 530, 60, 28));
+        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 610, 60, 28));
 
-        imageLabel.setMaximumSize(new java.awt.Dimension(512, 512));
+        imageLabel.setMaximumSize(new java.awt.Dimension(700, 700));
         imageLabel.setMinimumSize(new java.awt.Dimension(512, 512));
         imageLabel.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
             public void mouseWheelMoved(java.awt.event.MouseWheelEvent evt) {
                 imageLabelMouseWheelMoved(evt);
             }
         });
-        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 10, 512, 512));
+        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 10, 600, 600));
 
         jLabel1.setText("UID Study ");
-        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 40, -1, 20));
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 750, -1, 20));
 
         champ1.setEditable(false);
-        getContentPane().add(champ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 40, 560, -1));
+        getContentPane().add(champ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 750, 560, -1));
 
         jLabel2.setText("timeSlice");
-        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 70, -1, 20));
+        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 780, -1, 20));
 
         champ2.setEditable(false);
-        getContentPane().add(champ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 70, 560, -1));
-        getContentPane().add(jSeparator1, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 30, 240, 10));
+        getContentPane().add(champ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 780, 560, -1));
+        getContentPane().add(jSeparator1, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 740, 240, 10));
 
         jLabel3.setText("slice");
-        getContentPane().add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 100, -1, 20));
+        getContentPane().add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 810, -1, 20));
 
         champ3.setEditable(false);
         champ3.addActionListener(new java.awt.event.ActionListener() {
@@ -273,7 +284,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 champ3ActionPerformed(evt);
             }
         });
-        getContentPane().add(champ3, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 100, 560, -1));
+        getContentPane().add(champ3, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 810, 560, -1));
 
         selectAorta.setText("Selectionner Aorte");
         selectAorta.addActionListener(new java.awt.event.ActionListener() {
@@ -284,7 +295,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         getContentPane().add(selectAorta, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 233, 150, 40));
 
         jLabel4.setText("Acquisition Time");
-        getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 140, -1, -1));
+        getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 850, -1, -1));
 
         champ4.setEditable(false);
         champ4.addActionListener(new java.awt.event.ActionListener() {
@@ -292,15 +303,14 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 champ4ActionPerformed(evt);
             }
         });
-        getContentPane().add(champ4, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 140, 560, -1));
+        getContentPane().add(champ4, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 850, 560, -1));
 
         jLabel5.setText("Max");
-        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 200, -1, -1));
+        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 20, -1, -1));
 
-        sliderMax.setMaximum(200000);
+        sliderMax.setMaximum(100000);
         sliderMax.setMinorTickSpacing(1);
         sliderMax.setPaintLabels(true);
-        sliderMax.setPaintTicks(true);
         sliderMax.setSnapToTicks(true);
         sliderMax.setToolTipText("");
         sliderMax.setValue(5);
@@ -312,29 +322,29 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 sliderMaxStateChanged(evt);
             }
         });
-        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(880, 190, 570, -1));
+        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 10, 400, -1));
 
         jLabel6.setText("Coupe temporelle");
-        getContentPane().add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 310, 100, 20));
+        getContentPane().add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 130, 100, 20));
 
         frameList.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 frameListActionPerformed(evt);
             }
         });
-        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(860, 310, 110, 30));
+        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1170, 130, 110, 30));
 
         summ1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 summ1ActionPerformed(evt);
             }
         });
-        getContentPane().add(summ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(860, 380, -1, -1));
+        getContentPane().add(summ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1170, 200, -1, -1));
 
-        getContentPane().add(summ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(980, 380, -1, -1));
+        getContentPane().add(summ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(1290, 200, -1, -1));
 
         jLabel8.setText("à");
-        getContentPane().add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 380, 10, 20));
+        getContentPane().add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(1260, 200, 10, 20));
 
         summButton.setText("Sommer");
         summButton.addActionListener(new java.awt.event.ActionListener() {
@@ -342,21 +352,28 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 summButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(summButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 380, -1, -1));
+        getContentPane().add(summButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 200, -1, -1));
 
-        sliderMin.setMaximum(200000);
-        sliderMin.setPaintLabels(true);
-        sliderMin.setPaintTicks(true);
+        sliderMin.setMaximum(100000);
         sliderMin.setSnapToTicks(true);
+        sliderMin.setValueIsAdjusting(true);
         sliderMin.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 sliderMinStateChanged(evt);
             }
         });
-        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(880, 250, 570, -1));
+        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 40, 400, -1));
 
         jLabel7.setText("Min");
-        getContentPane().add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 250, -1, -1));
+        getContentPane().add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 40, -1, -1));
+
+        saveSummsButton.setText("Sauvegarder toutes les images sommées");
+        saveSummsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveSummsButtonActionPerformed(evt);
+            }
+        });
+        getContentPane().add(saveSummsButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1110, 630, 320, 100));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -397,7 +414,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_champ3ActionPerformed
     
     /**
-     * Affiche les 3 plans de l'image
+     * Selection de l'aorte
      * @param evt 
      */
     private void selectAortaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAortaActionPerformed
@@ -408,21 +425,20 @@ public class AfficherImages extends javax.swing.JInternalFrame {
             //Stack d'images à afficher
             ImageStack imgStack = new ImageStack(this.patient.getWidth(), this.patient.getHeight(), null);
             
-            ImageProcessor imgProc;
+            FloatProcessor imgProc;
             ImagePlus summAll;
            
-            displayedImages = this.patient.summSlices(0, this.nbTimeSlices-1);
+            float[][] summPixels = this.patient.summSlices(0, this.nbTimeSlices-1);
             //On parcout la liste des images pour les chargés dans le stack
-            for (BufferedImage buff : displayedImages) {
+            for (float[] pixels : summPixels) {
              
-                ImagePlus impTemp = new ImagePlus("", buff);
-                
-                imgProc = impTemp.getProcessor();
+               
+                imgProc = new FloatProcessor(this.patient.getWidth(), this.patient.getHeight(), pixels);
                 imgStack.addSlice(imgProc);
             }
             
             summAll = new ImagePlus("", imgStack);
-           //imgPlus.setLut(currentLUT);
+           
             
             //On cree les stacks des images non sommés
             ImagePlus[] framesStack = new ImagePlus[this.framesPerTimeSlice];
@@ -436,21 +452,28 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                 //on parcourt toutes les coupes temporelles
                 for (int slice = 0; slice < this.nbTimeSlices; slice++) {
                     DicomImage dcm  = this.patient.getTimeFrame(slice).getDicomImage(frameIndex);
-                    BufferedImage buffe;
+                    BufferedImage buffe =  new BufferedImage(this.patient.getWidth(), this.patient.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
                     if (dcm != null) {
-                       buffe = dcm.getBufferedImage();
+                        Graphics2D g = buffe.createGraphics();
+                        g.drawImage(dcm.getBufferedImage(), 0, 0, null);
+                       
+                       g.dispose();
                     }
-                    else {
-                        buffe = new BufferedImage(this.patient.getWidth(), this.patient.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
-                    }
+                    
+                    ShortProcessor sp = new ShortProcessor(buffe);
                     ImagePlus tmp = new ImagePlus("", buffe );
                     proc = tmp.getProcessor();
-                    stack.addSlice(proc);
+                    //System.out.println("Max pixel value images non sommées : " + sp.getMax());
+                    stack.addSlice(sp);
+                    
                 }
-                framesStack[frameIndex] = new ImagePlus("Frame " + Integer.toString(frameIndex+1), stack);
+                ImagePlus anotherImp = new ImagePlus("Frame " + Integer.toString(frameIndex+1), stack);
+               
+                framesStack[frameIndex] = anotherImp;
                 
             }
             System.out.println("Frame Stack size : " + framesStack.length + " x " + framesStack[0].getImageStackSize());
+            
             roiSelection(summAll, framesStack);
             
             //On enregistre le stack d'images ainsi crée dans un dossier temporaire
@@ -477,8 +500,12 @@ public class AfficherImages extends javax.swing.JInternalFrame {
 
     private void frameListActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_frameListActionPerformed
         try {
-            this.displayedImages = getImagesToDisplay(this.frameList.getSelectedIndex());
+            int frameIndex = this.frameList.getSelectedIndex();
+            this.displayedImages = getImagesToDisplay(frameIndex);
             display(this.currentImageID);
+            
+            //On affiche l'acquisition time
+            this.champ4.setText(patient.getTimeFrame(frameIndex).getAcquisitionTime());
             
         } catch (BadParametersException ex) {
             Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
@@ -494,8 +521,10 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         if (this.summButton.isSelected()) {
             int s1 = this.summ1.getSelectedIndex();
             int s2 = this.summ2.getSelectedIndex();
-            this.displayedImages = this.patient.summSlices(s1, s2); 
-            
+            float[][] imagePixels = this.patient.summSlices(s1, s2); 
+            for (int frame = 0; frame < this.framesPerTimeSlice; frame++) {
+                  this.displayedImages[frame] = DicomUtils.pixelsToBufferedImage(this.patient.getWidth(), this.patient.getHeight(), imagePixels[frame]);
+            }
         }
         else {
             try {
@@ -517,6 +546,21 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         this.minBrightness = this.sliderMin.getValue();
         display(this.currentImageID);
     }//GEN-LAST:event_sliderMinStateChanged
+
+    private void saveSummsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveSummsButtonActionPerformed
+        BufferedImage[] arrayToSave;
+        String filename;
+        for (int timeSliceIndex = 0; timeSliceIndex < this.nbTimeSlices; timeSliceIndex++) {
+            try {
+                arrayToSave = getSummSlices(0, timeSliceIndex);
+                filename = "tmp\\summ\\1_"+(timeSliceIndex+1)+".tiff";
+                DicomUtils.saveImagesAsTiff(arrayToSave, filename);
+            } catch (BadParametersException ex) {
+                Logger.getLogger(AfficherImages.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        }
+    }//GEN-LAST:event_saveSummsButtonActionPerformed
     
     /**
      * Affiche l'image d'id imageID dans la fenetre
@@ -528,40 +572,28 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         
         BufferedImage bufferedImage;
         
-        //Si aucune ROI n'a été chargée, on affiche l'image de base
-        
         bufferedImage = this.displayedImages[imageID];
           
-       
+        //On redimensionne l'image
+        bufferedImage = rescale(bufferedImage, IMAGE_SIZE, IMAGE_SIZE);
+        
+        //On sature l'image
+        bufferedImage = saturateImage(bufferedImage);
         
         //On applique la lookUpTable
-        
-        //On redimensionne l'image
-        bufferedImage = rescale(bufferedImage, 512, 512);
-        
-        //On ajuste le contraste
-        //bufferedImage = ajustContrast(bufferedImage);
-        //On gere la luminosité
-        
-        
-       
-        bufferedImage = ajustContrast(bufferedImage);
-        
         //bufferedImage = applyLut(bufferedImage, this.currentLUT);
         
-        
-        ImageIcon ii = new ImageIcon(bufferedImage);        
-        
-   
+        //On l'affiche dans la zone prévu a cet effet
+        ImageIcon ii = new ImageIcon(bufferedImage);         
         imageLabel.setIcon(ii);
-        
         imageIDTextField.setText((imageID + 1) + " / " + (this.displayedImages.length));
         /*
         this.champ1.setText(dcm.getAttribute(TagFromName.StudyInstanceUID));
         this.champ2.setText(""+dcm.getTimeSlice());
         this.champ3.setText(""+dcm.getSlice());
-        this.champ4.setText(dcm.getAttribute(TagFromName.AcquisitionTime));
         */
+       
+        
     }
     
     /**
@@ -574,18 +606,14 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      */
     public static BufferedImage rescale(BufferedImage source, int newWidth, int newHeight) {
         /* On crée une nouvelle image aux bonnes dimensions. */ 
-        BufferedImage buf = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB); 
+       
 
-        
+        Image scaledInstance = source.getScaledInstance(newWidth, newHeight, BufferedImage.SCALE_FAST);
+        BufferedImage buf = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_USHORT_GRAY); 
         Graphics2D g = buf.createGraphics(); 
-        
-        int fWidth = newWidth/source.getWidth() ;
-        int fHeight = newHeight/source.getHeight();
-        
-        //On applique une transformation affine aux pixels
-        AffineTransform at = AffineTransform.getScaleInstance(fWidth, fHeight);
-        g.drawRenderedImage(source, at);
-        
+        g.drawImage(scaledInstance, 0, 0, null);
+        g.dispose();
+       
       
         
         
@@ -664,6 +692,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
     private javax.swing.JFileChooser maskFileChooser;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;
+    private javax.swing.JButton saveSummsButton;
     private javax.swing.JButton selectAorta;
     private javax.swing.JSlider sliderMax;
     private javax.swing.JSlider sliderMin;
@@ -678,8 +707,23 @@ public class AfficherImages extends javax.swing.JInternalFrame {
      * @param framesStack tableau de stack, à la position i on a un stack est composé des images d'index i de chaque coupe temporelle
      */
     private void roiSelection(ImagePlus imgPlus, ImagePlus[] framesStack) {
+        //On affiche la série d'images 
         imgPlus.show();
         
+        //On recupère la fenêtre d'affichage
+        Window imgPlusWindow = WindowManager.getWindow(imgPlus.getTitle());
+        
+        //On y ajoute la gestion du ZOOM
+        imgPlusWindow.addMouseWheelListener((MouseWheelEvent e) -> {
+            int zoom = e.getWheelRotation();
+            
+            if (zoom < 0 && e.isControlDown()) {
+                IJ.run("To Selection");
+            } 
+            else if (zoom > 0 && e.isControlDown()){
+                IJ.run("Out");
+            }
+        });
         
         RoiManager roiManager = new RoiManager();
         roiManager.runCommand("reset");
@@ -691,10 +735,11 @@ public class AfficherImages extends javax.swing.JInternalFrame {
         b.addActionListener( new java.awt.event.ActionListener() {
             private ImagePlus[] framesStack;
             private Roi roi;
+            private String pixelUnity;
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                //Lorsqu'on appui sur le boutton
-                if (roiManager.getRoisAsArray().length > 0) { //On vérifie qu'une ROI a été ajoutée
+                if (roiManager.getCount() > 0) { //On vérifie qu'une ROI a été ajoutée
                     int selectedIndex = roiManager.getSelectedIndex();
                     System.out.println("Selected Rois Array : " + Arrays.toString(roiManager.getSelectedRoisAsArray()));
                     roi = roiManager.getSelectedRoisAsArray()[0];
@@ -706,7 +751,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                     System.out.println("Roi roi : " + roi);
                     System.out.println("Position roi : " + roi.getPosition());
                     ImagePlus stackFrame = this.framesStack[roi.getPosition()-1];
-                    stackFrame.show();
+                    
                     
                     subRoiManager.addRoi(roi);
                     subRoiManager.select(0);
@@ -714,7 +759,7 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                     ResultsTable multiMeasure = subRoiManager.multiMeasure(stackFrame);
                     multiMeasure.show("Resultats");
                     
-                    double[] means = multiMeasure.getColumnAsDoubles(1); // On recupère la valeur moyenne à l'intérieur de la ROI
+                    double[] means = multiMeasure.getColumnAsDoubles(1); // On recupère la valeur MOYENNE à l'intérieur de la ROI
                     double[] x = new double[means.length];
                     for(int i = 0; i < x.length; i++) {
                         x[i] = i+1;
@@ -722,24 +767,25 @@ public class AfficherImages extends javax.swing.JInternalFrame {
                     System.out.println(Arrays.toString(x));
                     System.out.println(Arrays.toString(means));
 
-                    Curve chart = new Curve("Résultats graphique", "Moyenne de la ROI", x, means);
+                    Curve chart = new Curve("Résultats graphique", "Moyenne de la ROI", "Frame", this.pixelUnity, x, means);
                     chart.setVisible( true );
                             
                 }
             }
             
-            private ActionListener init(ImagePlus[] fStack) {
+            private ActionListener init(ImagePlus[] fStack, String pixelUnity) {
                 this.framesStack = fStack;
-                
+                this.pixelUnity = pixelUnity;
                 System.out.println("Init button done");
                 return this;
             }
-        }.init(framesStack));
+        }.init(framesStack, this.pixelUnity));
         b.setText("Display the results");
-        WindowManager.getWindow("ROI Manager").add(b, BorderLayout.SOUTH);           
+        Window roiManagerWindow = WindowManager.getWindow("ROI Manager");                
+        roiManagerWindow.add(b, BorderLayout.SOUTH);           
     }
 
-    private BufferedImage ajustContrast(BufferedImage buff) {
+    private BufferedImage saturateImage(BufferedImage buff) {
           BufferedImage b = new BufferedImage(buff.getWidth(), buff.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
           Graphics2D g = b.createGraphics();
           g.drawImage(buff, 0, 0, null);
@@ -747,6 +793,22 @@ public class AfficherImages extends javax.swing.JInternalFrame {
           sp.setMinAndMax(this.minBrightness, this.maxBrightness);
           return sp.getBufferedImage();
         
+    }
+    
+    /**
+     * Fait la somme de deux coupe temporelle
+     * @param s1 coupe de départ
+     * @param s2 coupe d'arrivée
+     * @return Tableau de BufferedImage
+     */
+    private BufferedImage[] getSummSlices(int s1, int s2) {
+        BufferedImage[] buffs = new BufferedImage[this.framesPerTimeSlice];
+        float[][] imagePixels = this.patient.summSlices(s1, s2); 
+        for (int frame = 0; frame < this.framesPerTimeSlice; frame++) {
+              buffs[frame] = DicomUtils.pixelsToBufferedImage(this.patient.getWidth(), this.patient.getHeight(), imagePixels[frame]);
+        }
+        
+        return buffs;
     }
   
 

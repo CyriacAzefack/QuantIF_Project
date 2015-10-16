@@ -165,6 +165,9 @@ public final class DicomImage implements Comparable<DicomImage> {
         return this.slice;
     }
     
+    public AttributeList getAttributeList() {
+        return this.attributeList;
+    }
 	
        
   

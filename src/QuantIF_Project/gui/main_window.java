@@ -63,11 +63,13 @@ public class main_window extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         patientDescriptTextField = new javax.swing.JTextArea();
+        viewer = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         openPatientMenu = new javax.swing.JMenuItem();
         closePatientMenu = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
+        jMenuItem1 = new javax.swing.JMenuItem();
         closeAllMenu = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         displayImagesMenu = new javax.swing.JMenuItem();
@@ -165,7 +167,8 @@ public class main_window extends javax.swing.JFrame {
                         .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(1249, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(viewer, javax.swing.GroupLayout.DEFAULT_SIZE, 1245, Short.MAX_VALUE))
         );
         desktopLayout.setVerticalGroup(
             desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -179,11 +182,13 @@ public class main_window extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(306, Short.MAX_VALUE))
+            .addComponent(viewer, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         desktop.setLayer(jPanel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jPanel3, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jScrollPane1, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        desktop.setLayer(viewer, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         jMenu1.setText("Application");
         jMenu1.addActionListener(new java.awt.event.ActionListener() {
@@ -193,7 +198,7 @@ public class main_window extends javax.swing.JFrame {
         });
 
         openPatientMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
-        openPatientMenu.setText("Ouvrir dossier patient");
+        openPatientMenu.setText("Ouvrir un dossier patient");
         openPatientMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 openPatientMenuActionPerformed(evt);
@@ -202,7 +207,7 @@ public class main_window extends javax.swing.JFrame {
         jMenu1.add(openPatientMenu);
 
         closePatientMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
-        closePatientMenu.setText("Fermer dossier patient");
+        closePatientMenu.setText("Fermer un dossier patient");
         closePatientMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 closePatientMenuActionPerformed(evt);
@@ -210,6 +215,10 @@ public class main_window extends javax.swing.JFrame {
         });
         jMenu1.add(closePatientMenu);
         jMenu1.add(jSeparator2);
+
+        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem1.setText("Ouvrir un Super Patient");
+        jMenu1.add(jMenuItem1);
 
         closeAllMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F4, java.awt.event.InputEvent.ALT_MASK));
         closeAllMenu.setText("Quitter");
@@ -320,7 +329,9 @@ public class main_window extends javax.swing.JFrame {
             
             AfficherImages ai = new AfficherImages(this.patient);
             ai.show();
-            desktop.add(ai);
+            ai.setSize(this.viewer.getSize());
+            this.viewer.add(ai);
+            
             
             
             
@@ -332,12 +343,12 @@ public class main_window extends javax.swing.JFrame {
     }//GEN-LAST:event_displayImagesMenuActionPerformed
 
     private void closePatientMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closePatientMenuActionPerformed
-        Component[] components = desktop.getComponents();
+        Component[] components = viewer.getComponents();
         for (  Component component : components) {
             if (component instanceof AfficherImages) {
-                desktop.remove(component);
-                desktop.validate();
-                desktop.repaint();
+                viewer.remove(component);
+                viewer.validate();
+                viewer.repaint();
             }
         }
         this.patient = null;
@@ -386,6 +397,7 @@ public class main_window extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
@@ -393,5 +405,6 @@ public class main_window extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JMenuItem openPatientMenu;
     private javax.swing.JTextArea patientDescriptTextField;
+    private javax.swing.JLabel viewer;
     // End of variables declaration//GEN-END:variables
 }

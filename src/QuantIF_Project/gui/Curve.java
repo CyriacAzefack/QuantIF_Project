@@ -24,14 +24,14 @@ public class Curve extends ApplicationFrame {
      * @param x tableau des abscisses
      * @param y tableau des ordonnées
      */
-    public Curve( String applicationTitle , String chartTitle, double[] x, double[] y)    {
+    public Curve( String applicationTitle , String chartTitle, String xlegend, String ylegend, double[] x, double[] y)    {
         super(applicationTitle);
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         JFreeChart lineChart = null;
         try {
             lineChart = ChartFactory.createLineChart(
                     chartTitle,
-                    "Frame","Mean ROI",
+                    xlegend, ylegend,
                     createDataset(x, y),
                     PlotOrientation.VERTICAL,
                     true,true,false);
