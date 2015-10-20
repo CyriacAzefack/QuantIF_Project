@@ -14,6 +14,12 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -109,22 +115,49 @@ public class DicomUtils {
         }
         System.out.println("Dossier \"" + folder.getAbsolutePath() +"\" vidé");
     }
-    /**
-    public static Date convertDateTagToDate(AttributeList list) {
+    
+    public static double getMinutesBetweenDicomDates(String early, String late) {
         //Exemple de String : 082804.406005 
         //format : hhmmss.frac
-        Date date  = null;
+        Date earlyDate = null;
+        Date lateDate = null;
+        double minutes = 0;
+        DateFormat df = new SimpleDateFormat("HHmmss.SSS");
+        
+        try {
+            earlyDate = df.parse(early.substring(0, early.indexOf(".") + 3)); //+3 parceque on garde les milliseconds
+            lateDate = df.parse(late.substring(0, late.indexOf(".") + 3));
+
+            minutes = (lateDate.getTime() - earlyDate.getTime()) / (double)(60 * 1000);
+        } catch (ParseException ex) {
+            Logger.getLogger(DicomUtils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        //System.out.println("Early : " + earlyDate);
+        //System.out.println("Late : " + lateDate);
+        
+        return minutes;
+    }
+    
+    public static double getSecondesBetweenDicomDates(String early, String late) {
+        //Exemple de String : 082804.406005 
+        //format : hhmmss.frac
+        Date earlyDate ;
+        Date lateDate;
+        double secondes = 0;
         DateFormat df = new SimpleDateFormat("HHmmss");
         
-         try {
-             date = df.parse(dateString.substring(0, dateString.indexOf(".")));
-             //On extrait les différents champ
-         } catch (ParseException ex) {
-             Logger.getLogger(DicomUtils.class.getName()).log(Level.SEVERE, null, ex);
-         }
-        
-         return date;
+        try {
+            earlyDate = df.parse(early.substring(0, early.indexOf(".") + 3));//+3 parceque on garde les milliseconds
+            lateDate = df.parse(late.substring(0, late.indexOf(".") + 3));
 
+            secondes = (lateDate.getTime() - earlyDate.getTime())/ (double)1000;
+        } catch (ParseException ex) {
+            Logger.getLogger(DicomUtils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        //System.out.println("Early : " + earlyDate);
+        //System.out.println("Late : " + lateDate);
+        
+        return secondes;
     }
-    **/
+    
 }

@@ -10,28 +10,33 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.ui.RefineryUtilities;
 
 public class Curve extends ApplicationFrame {
     
+    private String xlegend;
+    private String ylegend;
   
     
     /**
      * Crée fenêtre affichant une courbe.
      * L'objet est de type JFrame
-     * @param applicationTitle Titre de la fenêtre d'affichage
+     * @param applicationTitle Nome de la fenêtre d'affichage
      * @param chartTitle Titre de la courbe
+     * @param xlegend Legende axe des abscisses
+     * @param ylegend Legende axe des ordonnées
      * @param x tableau des abscisses
      * @param y tableau des ordonnées
      */
     public Curve( String applicationTitle , String chartTitle, String xlegend, String ylegend, double[] x, double[] y)    {
         super(applicationTitle);
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        this.xlegend = xlegend;
+        this.ylegend = ylegend;
         JFreeChart lineChart = null;
         try {
             lineChart = ChartFactory.createLineChart(
                     chartTitle,
-                    xlegend, ylegend,
+                    this.xlegend, this.ylegend,
                     createDataset(x, y),
                     PlotOrientation.VERTICAL,
                     true,true,false);
@@ -49,8 +54,7 @@ public class Curve extends ApplicationFrame {
         //La fenêtre s'adapte à la taille des données
         this.pack( );
         
-        //On place la courbe au centre de l'écran
-        RefineryUtilities.centerFrameOnScreen(this);
+       
    }
     
     private DefaultCategoryDataset createDataset(double[] x, double[] y) throws Exception  {
@@ -59,7 +63,7 @@ public class Curve extends ApplicationFrame {
             throw new Exception("Le tableau d'abscisses et d'ordonnées n'ont pas la même taille");
         DefaultCategoryDataset dataset = new DefaultCategoryDataset( );
         for(int i = 0; i < x.length; i++) {
-            dataset.addValue(y[i], "Means ROI", Integer.toString((int) x[i]));
+            dataset.addValue(y[i], this.ylegend, String.valueOf(x[i]).substring(0, 3)); //On prends juste 3 chiffres signiicatif
         }
         
         return dataset;

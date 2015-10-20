@@ -9,7 +9,8 @@ package QuantIF_Project.gui;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
-import QuantIF_Project.patient.Patient;
+import QuantIF_Project.patient.PatientSerie;
+import QuantIF_Project.patient.PatientMultiSeries;
 import ij.IJ;
 import java.awt.Component;
 import java.io.File;
@@ -28,9 +29,11 @@ public class main_window extends javax.swing.JFrame {
     
        
     /**
-     * Patient en cours d'observation
+     * PatientSerie en cours d'observation
      */
-    private Patient patient;
+    private PatientSerie patient;
+    
+    private PatientMultiSeries superPatient;
     
     /**
      * Creates new form main_window
@@ -38,6 +41,7 @@ public class main_window extends javax.swing.JFrame {
     public main_window() {
         initComponents();
         this.patient = null;
+        this.superPatient = null;
         //On ferme toutes instances de IJ
         IJ.run("Close All");
         
@@ -53,7 +57,9 @@ public class main_window extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        fileChooser = new javax.swing.JFileChooser();
+        patientChooser = new javax.swing.JFileChooser();
+        dynSerieChooser = new javax.swing.JFileChooser();
+        statSerieChooser = new javax.swing.JFileChooser();
         desktop = new javax.swing.JDesktopPane();
         jPanel1 = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
@@ -63,20 +69,30 @@ public class main_window extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         patientDescriptTextField = new javax.swing.JTextArea();
-        viewer = new javax.swing.JLabel();
+        viewerLabel = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         openPatientMenu = new javax.swing.JMenuItem();
         closePatientMenu = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        openMultiAcqMenu = new javax.swing.JMenuItem();
+        closeMultiAcqMenu = new javax.swing.JMenuItem();
+        jSeparator3 = new javax.swing.JPopupMenu.Separator();
         closeAllMenu = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         displayImagesMenu = new javax.swing.JMenuItem();
 
-        fileChooser.setDialogTitle("Selectionner un dossier patient");
-        fileChooser.setFileHidingEnabled(false);
-        fileChooser.setFileSelectionMode(javax.swing.JFileChooser.FILES_AND_DIRECTORIES);
+        patientChooser.setDialogTitle("Selectionnez un dossier patient");
+        patientChooser.setFileHidingEnabled(false);
+        patientChooser.setFileSelectionMode(javax.swing.JFileChooser.FILES_AND_DIRECTORIES);
+
+        dynSerieChooser.setDialogTitle("Sélectionnez une série d");
+        dynSerieChooser.setFileHidingEnabled(false);
+        dynSerieChooser.setFileSelectionMode(javax.swing.JFileChooser.FILES_AND_DIRECTORIES);
+
+        statSerieChooser.setDialogTitle("Selectionnez la série statique");
+        statSerieChooser.setFileHidingEnabled(false);
+        statSerieChooser.setFileSelectionMode(javax.swing.JFileChooser.FILES_AND_DIRECTORIES);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("QuantIF_Project");
@@ -147,11 +163,12 @@ public class main_window extends javax.swing.JFrame {
 
         patientDescriptTextField.setEditable(false);
         patientDescriptTextField.setColumns(20);
-        patientDescriptTextField.setFont(new java.awt.Font("Monospaced", 1, 13)); // NOI18N
+        patientDescriptTextField.setFont(new java.awt.Font("Lucida Console", 0, 10)); // NOI18N
         patientDescriptTextField.setLineWrap(true);
         patientDescriptTextField.setRows(5);
         patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
         patientDescriptTextField.setAutoscrolls(false);
+        patientDescriptTextField.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         patientDescriptTextField.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         jScrollPane1.setViewportView(patientDescriptTextField);
 
@@ -161,14 +178,14 @@ public class main_window extends javax.swing.JFrame {
             desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(desktopLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(viewer, javax.swing.GroupLayout.DEFAULT_SIZE, 1245, Short.MAX_VALUE))
+                .addGroup(desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1327, Short.MAX_VALUE)
+                    .addComponent(viewerLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         desktopLayout.setVerticalGroup(
             desktopLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -179,16 +196,17 @@ public class main_window extends javax.swing.JFrame {
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(306, Short.MAX_VALUE))
-            .addComponent(viewer, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap(490, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, desktopLayout.createSequentialGroup()
+                .addComponent(viewerLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         desktop.setLayer(jPanel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jPanel3, javax.swing.JLayeredPane.DEFAULT_LAYER);
         desktop.setLayer(jScrollPane1, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        desktop.setLayer(viewer, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        desktop.setLayer(viewerLabel, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         jMenu1.setText("Application");
         jMenu1.addActionListener(new java.awt.event.ActionListener() {
@@ -216,9 +234,24 @@ public class main_window extends javax.swing.JFrame {
         jMenu1.add(closePatientMenu);
         jMenu1.add(jSeparator2);
 
-        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem1.setText("Ouvrir un Super Patient");
-        jMenu1.add(jMenuItem1);
+        openMultiAcqMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        openMultiAcqMenu.setText("Ouvrir une Multi Acquisition");
+        openMultiAcqMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                openMultiAcqMenuActionPerformed(evt);
+            }
+        });
+        jMenu1.add(openMultiAcqMenu);
+
+        closeMultiAcqMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        closeMultiAcqMenu.setText("Fermer une Multi Acquisition");
+        closeMultiAcqMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                closeMultiAcqMenuActionPerformed(evt);
+            }
+        });
+        jMenu1.add(closeMultiAcqMenu);
+        jMenu1.add(jSeparator3);
 
         closeAllMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F4, java.awt.event.InputEvent.ALT_MASK));
         closeAllMenu.setText("Quitter");
@@ -268,16 +301,22 @@ public class main_window extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenu1ActionPerformed
 
     private void openPatientMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openPatientMenuActionPerformed
-        if (this.patient != null)
+        
+        
+        if (this.patient != null) 
             this.closePatientMenuActionPerformed(evt);
         
+        if (this.superPatient != null)
+            this.closeMultiAcqMenuActionPerformed(evt);
+            
+        
         this.patientDescriptTextField.setText("Ouverture du patient en cours...");
-        int returnVal = fileChooser.showOpenDialog(this);
+        int returnVal = patientChooser.showOpenDialog(this);
         
         if (JFileChooser.APPROVE_OPTION == returnVal) {
             
             File choosenFile;
-            choosenFile = fileChooser.getSelectedFile();
+            choosenFile = patientChooser.getSelectedFile();
            
             // Un fois le dossier choisi
             
@@ -295,7 +334,7 @@ public class main_window extends javax.swing.JFrame {
                 
                
 		try {
-			this.patient = new Patient(patientDirPath);
+			this.patient = new PatientSerie(patientDirPath);
                         JOptionPane.showMessageDialog(null, "Le dossier patient a été ouvert avec succès\n\n"+this.patient.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
                         this.patientDescriptTextField.setText(this.patient.toString());
                         this.displayImagesMenuActionPerformed(evt);
@@ -316,10 +355,12 @@ public class main_window extends javax.swing.JFrame {
             }
             else {
                 JOptionPane.showMessageDialog(null, "Problem accessing the file!", "Erreur", JOptionPane.ERROR_MESSAGE);
+                this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
             }
            
         } else {
             System.out.println("File access cancelled by user.");
+            this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
         }
     }//GEN-LAST:event_openPatientMenuActionPerformed
 
@@ -327,10 +368,13 @@ public class main_window extends javax.swing.JFrame {
         
         if (this.patient != null) {
             
-            AfficherImages ai = new AfficherImages(this.patient);
-            ai.show();
-            ai.setSize(this.viewer.getSize());
-            this.viewer.add(ai);
+            PatientSerieViewer psv = new PatientSerieViewer(this.patient);
+            psv.show();
+            //Pour rendre la fenêtre immobile
+            
+            psv.setSize(this.viewerLabel.getSize());
+            
+            this.viewerLabel.add(psv);
             
             
             
@@ -343,12 +387,12 @@ public class main_window extends javax.swing.JFrame {
     }//GEN-LAST:event_displayImagesMenuActionPerformed
 
     private void closePatientMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closePatientMenuActionPerformed
-        Component[] components = viewer.getComponents();
+        Component[] components = viewerLabel.getComponents();
         for (  Component component : components) {
-            if (component instanceof AfficherImages) {
-                viewer.remove(component);
-                viewer.validate();
-                viewer.repaint();
+            if (component instanceof PatientSerieViewer) {
+                viewerLabel.remove(component);
+                viewerLabel.validate();
+                viewerLabel.repaint();
             }
         }
         this.patient = null;
@@ -356,6 +400,101 @@ public class main_window extends javax.swing.JFrame {
         this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
     }//GEN-LAST:event_closePatientMenuActionPerformed
 
+    private void openMultiAcqMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMultiAcqMenuActionPerformed
+        //On ferme le patient ou la multi acquisition ouvert avant
+        if (this.patient != null) 
+            this.closePatientMenuActionPerformed(evt);
+        
+        if (this.superPatient != null)
+            this.closeMultiAcqMenuActionPerformed(evt);
+        
+        this.patientDescriptTextField.setText("Ouverture de la multi acquisition en cours...\n");
+        
+        //On ouvre les différentes série une par une 
+        
+        //SERIE DYNAMIQUE DE DEPART
+        PatientSerie startDynSerie; 
+        this.patientDescriptTextField.append("Ouverture de la première série dynamique en cours...\n");
+        startDynSerie = chooseSerie(true);
+        
+        //SERIE STATIQUE
+        PatientSerie staticSerie;
+        this.patientDescriptTextField.append("Ouverture de la série statique en cours...\n");
+        staticSerie = chooseSerie(false);
+        
+        //SERIE DYNAMIQUE DE FIN
+        PatientSerie endDynSerie; 
+        this.patientDescriptTextField.append("Ouverture de la dernière série dynamique en cours...\n");
+        endDynSerie = chooseSerie(true);
+        
+        //PatientMultiSeries pms = new PatientMultiSeries()
+    }//GEN-LAST:event_openMultiAcqMenuActionPerformed
+
+    private void closeMultiAcqMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeMultiAcqMenuActionPerformed
+        this.superPatient = null;
+    }//GEN-LAST:event_closeMultiAcqMenuActionPerformed
+    /**
+     * Ouvre une fenêtre pour choisir une série de patient
+     * @param dynChoose Si vaut true alors on ouvre une série dynamique, sinon une série statique
+     * @return PatientSerie
+     */
+    private PatientSerie chooseSerie(boolean dynSerie) {
+        PatientSerie p = null;
+        this.patientDescriptTextField.setText("Ouverture de la série dynamique en cours...");
+        JFileChooser chooser = this.dynSerieChooser;
+        if (!dynSerie)
+            chooser = this.statSerieChooser;
+        int returnVal = chooser.showOpenDialog(this);
+        
+        if (JFileChooser.APPROVE_OPTION == returnVal) {
+            
+            File choosenFile;
+            choosenFile = chooser.getSelectedFile();
+           
+            // Un fois le dossier choisi
+            
+            if (choosenFile != null) {
+                String patientDirPath;
+                if (choosenFile.isDirectory()) {
+                    patientDirPath = choosenFile.getAbsolutePath();
+                }
+                else {
+                    patientDirPath = choosenFile.getParent();
+                }
+                
+                
+                //On peut créer un nouveau patient
+                
+               
+		try {
+			p = new PatientSerie(patientDirPath);
+                        JOptionPane.showMessageDialog(null, "L'acquisition a été ouverte avec succès\n\n"+p.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
+                        this.patientDescriptTextField.append(p.toString());
+                        
+                        
+                        
+                        System.out.println(p);
+		} catch (NotDirectoryException | DicomFilesNotFoundException
+                        | BadParametersException e) {
+			// TODO Auto-generated catch block
+                   
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                        this.patientDescriptTextField.setText("Erreur Lors de l'ouverture...");
+                        
+		} 
+                
+		
+                
+            }
+            else {
+                JOptionPane.showMessageDialog(null, "Problem accessing the file!", "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+           
+        } else {
+            System.out.println("File access cancelled by user.");
+        }
+        return p;
+    }
     /**
      * @param args the command line arguments
      */
@@ -387,24 +526,28 @@ public class main_window extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem closeAllMenu;
+    private javax.swing.JMenuItem closeMultiAcqMenu;
     private javax.swing.JMenuItem closePatientMenu;
     private javax.swing.JDesktopPane desktop;
     private javax.swing.JMenuItem displayImagesMenu;
-    private javax.swing.JFileChooser fileChooser;
+    private javax.swing.JFileChooser dynSerieChooser;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
+    private javax.swing.JPopupMenu.Separator jSeparator3;
+    private javax.swing.JMenuItem openMultiAcqMenu;
     private javax.swing.JMenuItem openPatientMenu;
+    private javax.swing.JFileChooser patientChooser;
     private javax.swing.JTextArea patientDescriptTextField;
-    private javax.swing.JLabel viewer;
+    private javax.swing.JFileChooser statSerieChooser;
+    private javax.swing.JLabel viewerLabel;
     // End of variables declaration//GEN-END:variables
 }

@@ -1,0 +1,8 @@
+<#if licenseFirst??>
+${licenseFirst}
+</#if>
+${licensePrefix}This Code belongs to his creator Cyriac Azefack and the lab QuanttIF of the "Centre Henri Becquerel"
+${licensePrefix} ${licensePrefix}
+<#if licenseLast??>
+${licenseLast}
+</#if>
