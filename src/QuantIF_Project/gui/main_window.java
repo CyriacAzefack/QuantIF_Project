@@ -467,7 +467,7 @@ public class main_window extends javax.swing.JFrame {
                 
                
 		try {
-			p = new PatientSerie(patientDirPath);
+			p = new PatientSerie(patientDirPath, true);
                         JOptionPane.showMessageDialog(null, "L'acquisition a été ouverte avec succès\n\n"+p.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
                         this.patientDescriptTextField.append(p.toString());
                         
