@@ -3,21 +3,22 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package QuantIF_Project.patient;
+package QuantIF_Project.serie;
 
+import QuantIF_Project.patient.DicomImage;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.ImageSizeException;
 import QuantIF_Project.patient.exceptions.TimeFrameOverflowException;
-import java.util.ArrayList;
+import com.pixelmed.dicom.TagFromName;
 
 /**
  * Une TimeFrame répresente un ensemble d'images ayant le même temps d'acquisition
  * @author Cyriac
  */
-public class TimeFrame implements Comparable<TimeFrame>{
+public class TimeFrame extends Block implements Comparable<TimeFrame>{
     
     /**
-     * Liste des dicom images contenues dans cette time frame
+     * Liste des dicom images contenues dans cette startTime frame
      */
     private DicomImage[] dicomImages;
     
@@ -38,9 +39,14 @@ public class TimeFrame implements Comparable<TimeFrame>{
     private int height;
     
     /**
-     * Heure de l'acquisitionn de cette time frame
+     * temps en secondes de début d'acquisitionn de cette frame
      */
-    private String acqsuitionTime;
+    private double startTime;
+    
+    /**
+     * temps en secondes de fin d'acquisitionn de cette frame
+     */
+    private double endTime;
     
     /**
      * On crée une TimeFrame vide 
@@ -55,6 +61,7 @@ public class TimeFrame implements Comparable<TimeFrame>{
      *      - La largeur ou la hauteur de l'image est inférieur à 0
      */
     public TimeFrame(int nbMaxDicomImages, String acquisitionTime, int width, int height) throws BadParametersException {
+        super(width, height);
         //On vérifie les paramètres
         if (nbMaxDicomImages < 0)
             throw new BadParametersException("Le nombre d'images dans une Coupe Temporelle doit être supérieur à 0");
@@ -62,21 +69,31 @@ public class TimeFrame implements Comparable<TimeFrame>{
         if (acquisitionTime.isEmpty())
             throw new BadParametersException("L'heure d'acquisition d'une coupe temporelle ne peut être vide");
         
-        if (width < 0 || height < 0 ) 
-            throw new BadParametersException("Les dimensions des images d'une coupe temporelle doivent être supérieur à 0");
+       
         
         this.nbMaxDicomImages = nbMaxDicomImages;
         this.dicomImages = new DicomImage[this.nbMaxDicomImages];
-        this.acqsuitionTime = acquisitionTime;
+        
         this.width = width;
         this.height = height;
     }
     
-    
-    public String getAcquisitionTime() {
-        return this.acqsuitionTime;
+    /**
+     * Renvoie le temps moyen de l'acquisition en secondes
+     * 
+     * 
+     */
+    public double getMidTime() {
+        return (this.startTime + this.endTime)/2;
     }
     
+    public double getStartTime() {
+        return this.startTime;
+    } 
+    
+    public double getEndTime() {
+        return this.endTime;
+    }
     /**
      * Ajoute un DiccomImage à cette coupe temporelle
      * @param di DicomImage à ajouter
@@ -85,7 +102,7 @@ public class TimeFrame implements Comparable<TimeFrame>{
      * @throws ImageSizeException
      *      Si les dimensions de l'image à ajouté ne corresponds pas à ceux de la coupe
      * @throws TimeFrameOverflowException
-     *      Si on dépasse la taille prévue pour cette time frame
+     *      Si on dépasse la taille prévue pour cette startTime frame
      */
     public void addDicomImage(DicomImage di) throws BadParametersException, ImageSizeException, TimeFrameOverflowException {
         if (di == null)
@@ -122,9 +139,15 @@ public class TimeFrame implements Comparable<TimeFrame>{
      */
     @Override
     public int compareTo(TimeFrame tf) {
-        return this.acqsuitionTime.compareTo(tf.getAcquisitionTime());
+        if (this.startTime > tf.getMidTime())
+            return 1;
+        else if (this.startTime < tf.getMidTime())
+            return -1;
+        
+        return 0;
     }
     
+    @Override
     public DicomImage getDicomImage(int imageIndex) throws BadParametersException {
         if (imageIndex < 0) 
             throw new BadParametersException("L'indice de l'image doit être supérieur ou égal à 0");
@@ -135,6 +158,11 @@ public class TimeFrame implements Comparable<TimeFrame>{
     
     public int size() {
         return this.dicomImages.length;
+    }
+
+    public void setTime() {
+        this.startTime = Double.valueOf(this.dicomImages[0].getAttribute(TagFromName.FrameReferenceTime))/1000;
+        this.endTime = this.startTime + Double.valueOf(this.dicomImages[0].getAttribute(TagFromName.ActualFrameDuration))/1000;
     }
     
 }

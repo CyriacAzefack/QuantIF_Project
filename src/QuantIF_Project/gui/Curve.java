@@ -1,21 +1,28 @@
 package QuantIF_Project.gui;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.event.WindowEvent;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFrame;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public class Curve extends ApplicationFrame {
     
-    private String xlegend;
-    private String ylegend;
-  
+    private final String xlegend;
+    private final String ylegend;
+    private final XYSeriesCollection  dataset;
+    private final XYLineAndShapeRenderer renderer;
+    private JFreeChart xylineChart;
+    private String chartTitle;
+    
     
     /**
      * Crée fenêtre affichant une courbe.
@@ -32,47 +39,87 @@ public class Curve extends ApplicationFrame {
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.xlegend = xlegend;
         this.ylegend = ylegend;
-        JFreeChart lineChart = null;
-        try {
-            lineChart = ChartFactory.createLineChart(
-                    chartTitle,
-                    this.xlegend, this.ylegend,
-                    createDataset(x, y),
-                    PlotOrientation.VERTICAL,
-                    true,true,false);
-            
-            
-        } catch (Exception ex) {
-            Logger.getLogger(Curve.class.getName()).log(Level.SEVERE, null, ex);
+        this.dataset = new XYSeriesCollection ();
+        this.renderer = new XYLineAndShapeRenderer( );
+        this.xylineChart = null;
+        this.chartTitle = chartTitle;
+        addData(x, y, chartTitle);
+        //draw(chartTitle);
+        
+        
+        
+       
+   }
+    
+    /**
+     * Crée les données d'affichage
+     * @param x valeurs en abscisses
+     * @param y valeurs en ordonnées
+     * @return
+     * @throws Exception 
+     */
+    private XYSeries createXYSeries(double[] x, double[] y, String title) {
+        
+        if(x.length != y.length)
+            throw new IllegalArgumentException("Le tableau d'abscisses et d'ordonnées n'ont pas la même taille");
+       
+        XYSeries data = new XYSeries(title);
+        for(int i = 0; i < x.length; i++) {
+            data.add(x[i], y[i]); //On prends juste 3 chiffres signiicatif
         }
+        
+        
+        return data;
+   }
+    
+   public final void addData(double[] x, double[] y, String title) {
+        if(x.length != y.length)
+            throw new IllegalArgumentException("Le tableau d'abscisses et d'ordonnées n'ont pas la même taille");
+        this.dataset.addSeries(createXYSeries(x, y, title));
+        draw();
+        
+   }
+   
+   public final void addData(double[] x, double[] y, String title, Color color, float thickness) {
+       addData(x, y, title);
+       System.out.println("Add Data sophistiqué");
+       int n = this.dataset.getSeriesCount();
+       this.renderer.setSeriesPaint(n-1, color);
+       this.renderer.setSeriesStroke(n-1, new BasicStroke(thickness));
+            
+       XYPlot plot = this.xylineChart.getXYPlot();
+       //plot.setRenderer(n, renderer);
+       plot.setRenderer(renderer);
+       
+       
+   }
+   
+    @Override
+   public void windowClosing(WindowEvent event) {
+       this.dispose();
+   }
+
+    private void draw() {
+       
+       
+        this.xylineChart = ChartFactory.createXYLineChart(
+            chartTitle,
+            this.xlegend, this.ylegend,
+            this.dataset,
+            PlotOrientation.VERTICAL,
+            true,true,false);
+
+            
+       
          
-        ChartPanel chartPanel = new ChartPanel( lineChart );
-        //
+        ChartPanel chartPanel = new ChartPanel( xylineChart );
+        
         chartPanel.setPreferredSize( new java.awt.Dimension( 560 , 367 ) );
         setContentPane( chartPanel );
         
         //La fenêtre s'adapte à la taille des données
         this.pack( );
-        
-       
-   }
-    
-    private DefaultCategoryDataset createDataset(double[] x, double[] y) throws Exception  {
-        
-        if(x.length != y.length)
-            throw new Exception("Le tableau d'abscisses et d'ordonnées n'ont pas la même taille");
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset( );
-        for(int i = 0; i < x.length; i++) {
-            dataset.addValue(y[i], this.ylegend, String.valueOf(x[i]).substring(0, 3)); //On prends juste 3 chiffres signiicatif
-        }
-        
-        return dataset;
-   }
-    
-    @Override
-   public void windowClosing(WindowEvent event) {
-       this.dispose();
-   }
+    }
    /**
    public static void main( String[ ] args ) 
    {

@@ -6,7 +6,11 @@ import com.pixelmed.dicom.AttributeTag;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.display.SourceImage;
+import ij.IJ;
+import ij.ImagePlus;
 import ij.io.Opener;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +39,7 @@ public final class DicomImage implements Comparable<DicomImage> {
         /**
          * Image 
          */
-        private SourceImage srcImg;
+        public ImagePlus imgPlus;
         /**
          * Index de la coupe temporelle dans laquelle se trouve l'image
          */
@@ -45,6 +49,8 @@ public final class DicomImage implements Comparable<DicomImage> {
          * Index de l'image dans la coupe temporelle dans laquelle elle se trouve
          */
 	private int slice;
+        
+        private SourceImage displayImage;
         
 	/**
 	 * On cree une instance de DicomImage
@@ -66,8 +72,8 @@ public final class DicomImage implements Comparable<DicomImage> {
             this.attributeList.read(file.getAbsolutePath());
             
            
-            this.srcImg = new SourceImage(file.getAbsolutePath());
-            
+            this.imgPlus = IJ.openImage(dicomFile.getAbsolutePath());
+            this.displayImage = new SourceImage(dicomFile.getAbsolutePath());
          
            
             this.timeSlice = 0;
@@ -139,15 +145,15 @@ public final class DicomImage implements Comparable<DicomImage> {
          */
 	public BufferedImage getBufferedImage() {
           
-           return this.srcImg.getBufferedImage();
+           return this.displayImage.getBufferedImage();
         }
 
     public int getWidth() {
-        return this.srcImg.getWidth();
+        return this.imgPlus.getWidth();
     }
 
     public int getHeight() {
-        return this.srcImg.getHeight();
+        return this.imgPlus.getHeight();
     }
     
     
@@ -168,8 +174,28 @@ public final class DicomImage implements Comparable<DicomImage> {
     public AttributeList getAttributeList() {
         return this.attributeList;
     }
-	
-       
+    
+    public ImagePlus getImagePlus() {
+        return this.imgPlus;
+    }
+    
+    /**
+     * Retourne l'image en ayant pris en compte le rescale slope et intercept
+     * @return 
+     */    
+    public ImageProcessor getImageProcessor() {
+        float rescaleInt = Float.parseFloat(getAttribute(TagFromName.RescaleIntercept));
+        float rescaleSlope = Float.parseFloat(getAttribute(TagFromName.RescaleSlope));
+        float[] pixels = (float[]) this.imgPlus.getProcessor().convertToFloatProcessor().getPixels();
+        
+        for (int i = 0; i < pixels.length; i++ ) {
+            pixels[i] = pixels[i]*rescaleSlope + rescaleInt;
+        }
+        
+        FloatProcessor fp = new FloatProcessor(getWidth(), getHeight(), pixels);
+        return fp;
+    }
+      
   
 	
 }
