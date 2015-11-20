@@ -4,9 +4,11 @@
  */
 package QuantIF_Project.serie;
 
+import QuantIF_Project.patient.AortaResults;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import ij.gui.Roi;
+import java.util.Date;
 
 /**
  *
@@ -50,6 +52,15 @@ public interface Serie {
      */
     public Block getBlock(int index) throws BadParametersException ;
     
+    /**
+     * Calcule et retourne les résultats liés à la ROI déssinnée
+     */
+    public AortaResults getAortaResults();
+    
+    /**
+     * Date de début d'acquisition de la série
+     */
+    public Date getSerieStartDate();
     /**
      * Dessiner la roi et faire les calculs dessus
      * @param roi roi sur lequel on fait les calculs. Peut prendre la valeur "null"

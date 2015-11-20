@@ -80,8 +80,6 @@ public class TimeFrame extends Block implements Comparable<TimeFrame>{
     
     /**
      * Renvoie le temps moyen de l'acquisition en secondes
-     * 
-     * 
      */
     public double getMidTime() {
         return (this.startTime + this.endTime)/2;

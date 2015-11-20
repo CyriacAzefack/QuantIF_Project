@@ -4,11 +4,21 @@
  */
 package aa;
 
-import QuantIF_Project.gui.PatientSerieViewer;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.WindowManager;
+import java.awt.Component;
+import java.awt.Frame;
+import java.awt.Window;
+import java.awt.event.ComponentListener;
+import java.awt.event.ContainerListener;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
-import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
 
 /**
  *
@@ -23,12 +33,48 @@ public class testDisplay extends javax.swing.JFrame {
         initComponents();
         String path = "C:\\Users\\kamelya\\Desktop\\dw.png";
         ImagePlus imp = IJ.openImage(path);
-        BufferedImage buff = imp.getBufferedImage();
+        imp.setTitle(path);
+        
+        //WindowManager.setTempCurrentImage(imp);
         imp.show();
         
+        WindowManager.setTempCurrentImage(imp);
+        Frame frame = WindowManager.getCurrentWindow();
+       frame.dispose();
+        
+        //window.setVisible(true);
+        //window.toFront();
+        
+        JInternalFrame jiFrame = new JInternalFrame(path);
+        //jiFrame.setContentPane(frame.getFocusCycleRootAncestor());
+        
+        Component[] comps = frame.getComponents();
+        
+        MouseWheelListener[] mwlisteners = frame.getMouseWheelListeners();
+       
+        
+        for (Component comp : comps) {
+            jiFrame.add(comp);  
+        }
+        
+        for (MouseWheelListener comp : mwlisteners) {
+            jiFrame.addMouseWheelListener(comp);
+        }
+       
+        /*
+        for (ContainerListener list : listeners) {
+            jiFrame.addContainerListener(list);
+        }
+        */
+        //jiFrame.setContentPane(((JFrame)frame).getContentPane());
+        
+        jiFrame.setSize(this.getSize());
+        jiFrame.setVisible(true);
+        
+        
+        this.add(jiFrame);
         //buff = PatientSerieViewer.rescale(buff, this.getWidth(), this.getHeight());
-        ImageIcon ii = new ImageIcon(buff);         
-        imageLabel.setIcon(ii);
+        
     }
 
     /**
@@ -40,27 +86,18 @@ public class testDisplay extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        imageLabel = new javax.swing.JLabel();
-
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        imageLabel.setText("jLabel1");
+        setTitle("Test integration IJ");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(83, 83, 83)
-                .addComponent(imageLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 831, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(43, Short.MAX_VALUE))
+            .addGap(0, 957, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(55, 55, 55)
-                .addComponent(imageLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 498, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(33, Short.MAX_VALUE))
+            .addGap(0, 586, Short.MAX_VALUE)
         );
 
         pack();
@@ -82,26 +119,19 @@ public class testDisplay extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(testDisplay.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(testDisplay.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(testDisplay.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(testDisplay.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
+        
+        //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new testDisplay().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new testDisplay().setVisible(true);
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel imageLabel;
     // End of variables declaration//GEN-END:variables
 }

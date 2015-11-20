@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -304,7 +303,7 @@ public class TEPSerie implements Serie{
             }
             
             
-            
+            //On met à jour les valeurs de temps des différentes frames
             for (TimeFrame tf : this.timeFrames) {
                 tf.setTime();
             }
@@ -331,15 +330,16 @@ public class TEPSerie implements Serie{
      * @return Un tableau contenant la somme des images
      */
     
+        @Override
     public float[][] summSlices(int startSlice, int endSlice) {
         
         //Tableau contenant les images sommés
         float[][] summImagesArray = new float[this.nbImagesPerTimeFrame][width*height];
         //Image avec les bonnes dimensions : à re remplir
         
-        BufferedImage resultSumm;
+       
         
-        float max = 0;
+      
         
         
         //On parcourt toutes les images de la coupe temporelle d'index startSlice
@@ -372,8 +372,7 @@ public class TEPSerie implements Serie{
                                 pixels[row * width + col] += pix;
                                 
                                 
-                                if (max < pixels[row * width + col])
-                                    max = pixels[row * width + col];
+                                
                                 
                             }
                             
@@ -390,7 +389,7 @@ public class TEPSerie implements Serie{
             
             summImagesArray[imageIndex] = pixels;
         }   
-        System.out.println("Max Value : " + max);
+        
         System.out.println("Somme de " + (startSlice + 1)  + " à " + (endSlice + 1) + " faite!!!");
         
         //Affichage de la somme 
@@ -534,13 +533,13 @@ public class TEPSerie implements Serie{
      * @param roi
      * @param startIndex indice de la frame de début pour la somme 
      * @param endIndex indice de la frame de fin pour la somme 
-     * @throws BadParametersException 
      */
         @Override
     public void selectAorta(Roi roi, int startIndex, int endIndex)  {
         
         ImageStack imgStack = new ImageStack(this.width, this.height, null);
 
+        //On fait la somme des Coupes allant de "startIndex" à "endIndex"
         FloatProcessor imgProc;
         ImagePlus summAll;
         float[][] summSlices;
@@ -560,7 +559,8 @@ public class TEPSerie implements Serie{
             imgProc = new FloatProcessor(width, height, pixels);
             imgStack.addSlice(imgProc);
         }
-
+        
+        //Ensemble des images résultantes de la somme
         summAll = new ImagePlus("", imgStack);
 
 
@@ -622,7 +622,7 @@ public class TEPSerie implements Serie{
      */
     private void roiSelection(ImagePlus summAll, ImagePlus[] framesStack) {
         //On affiche la série d'images 
-        summAll.setTitle("Série Dynamique 1 -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
+        summAll.setTitle("Série Dynamique TEP de départ -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
         summAll.show();
         
         
@@ -641,8 +641,9 @@ public class TEPSerie implements Serie{
             }
         });
         
+        //GESTION DU DESSIN DE LA ROI
         RoiManager roiManager = new RoiManager();
-        //roiManager.runCommand("reset");
+        
         //Bouton de calcul
         JButton compileAndDisplayButton = new JButton();
         compileAndDisplayButton.setSize(100, 100);
@@ -728,7 +729,6 @@ public class TEPSerie implements Serie{
     
     /**
      * Renvoie true si ce patient fait partie d'une multi acquisition
-     * 
      */
     private boolean isPartOfMultiAcq() {
         return this.isPartOfMultAcq;
@@ -752,7 +752,7 @@ public class TEPSerie implements Serie{
         int resultTableSize = resultTable.getColumnAsDoubles(0).length;
         System.out.println("Size of ResultsTable : " + resultTableSize );
        
-        
+        //On parcourt les lignes du tableaux pour ajouter les valeur de temps
         for (int row = 0; row < resultTableSize; row++) {
             resultTable.setValue("Start Time(sec)", row, this.timeFrames.get(row).getStartTime());
             resultTable.setValue("Mid time (sec)", row, this.timeFrames.get(row).getMidTime());
@@ -762,9 +762,9 @@ public class TEPSerie implements Serie{
         }
         
         this.aortaResults = new AortaResults(this.name, roi, resultTable);
-        //On avertit la multi série que la ROI a été sélectionner donc on peut commencer les calculs
         
-        System.out.println(this.parent);
+        
+        //On avertit la multi série que la ROI a été sélectionner donc on peut commencer les calculs pour les autres séries
         if (this.parent != null && this.isFirstInMultiAcq)
             this.parent.roiSelected(roi);
         
@@ -784,25 +784,25 @@ public class TEPSerie implements Serie{
      *
      */
     private void getRoiResults(Roi roi, ImagePlus summAll, ImagePlus[] framesStack) throws BadParametersException {
-        //On affiche l'image ou la ROI apparait
-        ImagePlus impROI = WindowManager.getImage("Série Dynamique 2 -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
-        if (impROI == null) 
-            impROI = WindowManager.getImage("Série Statique -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
+         //On récupère la série d'images dynamique affichée
+        ImagePlus impROI = WindowManager.getImage("Série Dynamique TEP de fin -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
+       
+        //Si elle n'est pas affichée, on l'affiche
+        
         if (impROI == null) {
-            //impROI = new ImagePlus(this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame, summAll.getStack().getProcessor(roi.getPosition()));
-            if (this.nbTimeFrames > 1) {
-                summAll.setTitle("Série Dynamique 2 -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
-            }
-            else {
-                summAll.setTitle("Série Statique -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
-            }
+           
+          
+            summAll.setTitle("Série Dynamique TEP de fin -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
+           
+           
             impROI = summAll;
             System.out.println("***RESET AFFICHAGE "+this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame+"****");
-            //impROI.show();
+            
             impROI.show();
         }
         Roi selectedRoi = roi;
        
+        //On recupére la ROI dessinée sur la série si il y en a une
         if (impROI.getRoi() != null) {
             selectedRoi = impROI.getRoi();
             //selectedRoi.setPosition(roi.getPosition());
@@ -820,8 +820,8 @@ public class TEPSerie implements Serie{
         
         
         
-        RoiManager roiManager = new RoiManager(true); //true -> le roimanager ne s'affiche pas
-        //roiManager.runCommand("reset");
+        RoiManager roiManager = new RoiManager(true); //true -> Ce roimanager ne s'affiche pas
+        
         roiManager.addRoi(selectedRoi);
         System.out.println("Selected ROI position : " + selectedRoi.getPosition());
         
@@ -844,6 +844,7 @@ public class TEPSerie implements Serie{
     
      
 
+    @Override
     public AortaResults getAortaResults() {
        
         return this.aortaResults;
