@@ -1,4 +1,8 @@
-package QuantIF_Project.patient;
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
+ */
+package QuantIF_Project.serie;
 import QuantIF_Project.utils.DicomUtils;
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
@@ -183,7 +187,7 @@ public final class DicomImage implements Comparable<DicomImage> {
      * Retourne l'image en ayant pris en compte le rescale slope et intercept
      * @return 
      */    
-    public ImageProcessor getImageProcessor() {
+    public FloatProcessor getImageProcessor() {
         float rescaleInt = Float.parseFloat(getAttribute(TagFromName.RescaleIntercept));
         float rescaleSlope = Float.parseFloat(getAttribute(TagFromName.RescaleSlope));
         float[] pixels = (float[]) this.imgPlus.getProcessor().convertToFloatProcessor().getPixels();

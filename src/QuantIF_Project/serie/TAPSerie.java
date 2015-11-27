@@ -1,11 +1,10 @@
-/*
- * This Code belongs to his creator Cyriac Azefack and the lab QuanttIF of the "Centre Henri Becquerel"
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
  *   * 
  */
 package QuantIF_Project.serie;
 
 import QuantIF_Project.patient.AortaResults;
-import QuantIF_Project.patient.DicomImage;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
@@ -20,7 +19,6 @@ import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
-import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,10 +32,7 @@ import java.util.logging.Logger;
 
 public class TAPSerie implements Serie{
     
-    /**
-     * Nombre de block contenus dans la TAP
-     */
-    private int nbBodyBlocks;
+   
     
    
     
@@ -50,6 +45,7 @@ public class TAPSerie implements Serie{
      * Patient paren
      */
     PatientMultiSeries parent;
+    
     
     /**
      * Partie du corps choisie pour l'étude
@@ -73,10 +69,16 @@ public class TAPSerie implements Serie{
     private String weight;
     private final int width;
     private final int height;
+    
     /**
      * La série fait partie d'une acquisition multiple
      */
     private boolean isPartOfMultAcq;
+    
+    /**
+     * Série TEP précédant cette série TAP dans la multi acquisition
+     */
+    private TEPSerie startTEPSerie;
     
     /**
      * 
@@ -125,17 +127,19 @@ public class TAPSerie implements Serie{
     }
     
     /**
-     *
-     * @param dirPath
-     * @param multiAcq
+     * Cree une série TAP appartenant à une multi-acquisition
+     * @param dirPath chemin du dossier contenant les images
+     * @param multiAcq appartient à une multiAcquisition
+     * @param tepSerie Série TEP précédant cette série dans la multi acquisition
      * @throws QuantIF_Project.patient.exceptions.NotDirectoryException
      * @throws QuantIF_Project.patient.exceptions.BadParametersException
      * @throws QuantIF_Project.patient.exceptions.NoTAPSerieFoundException
      * @throws QuantIF_Project.patient.exceptions.DicomFilesNotFoundException
      */
-    public TAPSerie (String dirPath, boolean multiAcq) throws NotDirectoryException, BadParametersException, NoTAPSerieFoundException, DicomFilesNotFoundException {
+    public TAPSerie (String dirPath, boolean multiAcq, TEPSerie tepSerie) throws NotDirectoryException, BadParametersException, NoTAPSerieFoundException, DicomFilesNotFoundException {
         this(dirPath);
         this.isPartOfMultAcq = multiAcq;
+        this.startTEPSerie = tepSerie;
     }
     
     /**
@@ -177,7 +181,7 @@ public class TAPSerie implements Serie{
             bb.setTime();
         }
         System.out.println(this.bodyBlocks.size() + " parties du corps détectées!!");
-        this.nbBodyBlocks = this.bodyBlocks.size();
+        
         
     }
     
@@ -186,7 +190,7 @@ public class TAPSerie implements Serie{
      * @param bodyBlockIndex index de la partie du corps sélectrionnée
      */
     public void setChoosenBodyBlock(int bodyBlockIndex) {
-        this.nbBodyBlocks = 1;
+        
         //On vide la liste et on garde uniquement celle sélectionnée
         this.choosenBodyBlock = this.bodyBlocks.get(bodyBlockIndex);
         this.bodyBlocks.clear();
@@ -209,10 +213,10 @@ public class TAPSerie implements Serie{
     public int getNbImages(int blockIndex) {
         return this.bodyBlocks.get(blockIndex).size();
     }
-
+    
     @Override
     public int getNbBlocks() {
-        return this.nbBodyBlocks;
+        return this.bodyBlocks.size();
     }
 
     @Override
@@ -461,7 +465,7 @@ public class TAPSerie implements Serie{
         resultTable.setValue("Mid time (sec)", 0, this.choosenBodyBlock.getMidTime());
         resultTable.setValue("End Time(sec)", 0, this.choosenBodyBlock.getEndTime());
           
-        resultTable.show("TAP RESULTS");
+        //resultTable.show("TAP RESULTS");
         
         
         this.aortaResults = new AortaResults(this.name, roi, resultTable);
@@ -477,5 +481,9 @@ public class TAPSerie implements Serie{
     
     public boolean isPartOfMultAcq () {
         return this.isPartOfMultAcq;
+    }
+    
+    public BufferedImage[] getStartTEPSerieSummAll() {
+        return this.startTEPSerie.getSummALL();
     }
 }

@@ -1,7 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
  */
 package QuantIF_Project.gui;
 
@@ -15,6 +14,7 @@ import QuantIF_Project.patient.exceptions.NoTAPSerieFoundException;
 import QuantIF_Project.serie.TAPSerie;
 import QuantIF_Project.patient.exceptions.PatientStudyException;
 import QuantIF_Project.patient.exceptions.SeriesOrderException;
+import QuantIF_Project.process.Patlak;
 import QuantIF_Project.serie.Serie;
 import ij.IJ;
 import java.awt.Component;
@@ -48,6 +48,8 @@ public class main_window extends javax.swing.JFrame {
      * Verrou de synchronisation
      */
     private static Object lock;
+    private TAPSerieViewer tsv;
+    private PatientSerieViewer psv;
     
     /**
      * Creates new form main_window
@@ -60,6 +62,10 @@ public class main_window extends javax.swing.JFrame {
         main_window.lock = new Object();
         //On ferme toutes instances de IJ
         IJ.run("Close All");
+        this.patlakQuantMethod.setEnabled(false);
+        this.hunterQuantMethod.setEnabled(false);
+        this.tsv = null;
+        this.psv = null;
         
         
     }
@@ -90,7 +96,10 @@ public class main_window extends javax.swing.JFrame {
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
         closeAllMenu = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
-        displayImagesMenu = new javax.swing.JMenuItem();
+        patlakQuantMethod = new javax.swing.JMenuItem();
+        hunterQuantMethod = new javax.swing.JMenuItem();
+        jMenu3 = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
 
         patientChooser.setDialogTitle("Selectionnez un dossier patient");
         patientChooser.setFileHidingEnabled(false);
@@ -109,7 +118,6 @@ public class main_window extends javax.swing.JFrame {
         desktop.setLayout(new java.awt.BorderLayout());
 
         jScrollPane1.setFocusable(false);
-        jScrollPane1.setOpaque(false);
         jScrollPane1.setRequestFocusEnabled(false);
         jScrollPane1.setVerifyInputWhenFocusTarget(false);
 
@@ -189,17 +197,27 @@ public class main_window extends javax.swing.JFrame {
 
         jMenuBar1.add(jMenu1);
 
-        jMenu2.setText("Options");
+        jMenu2.setText("Quantification");
 
-        displayImagesMenu.setText("Afficher Images");
-        displayImagesMenu.addActionListener(new java.awt.event.ActionListener() {
+        patlakQuantMethod.setText("Patlak");
+        patlakQuantMethod.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                displayImagesMenuActionPerformed(evt);
+                patlakQuantMethodActionPerformed(evt);
             }
         });
-        jMenu2.add(displayImagesMenu);
+        jMenu2.add(patlakQuantMethod);
+
+        hunterQuantMethod.setText("Hunter");
+        jMenu2.add(hunterQuantMethod);
 
         jMenuBar1.add(jMenu2);
+
+        jMenu3.setText("Affichage");
+
+        jMenuItem1.setText("Afficher résultats aorte");
+        jMenu3.add(jMenuItem1);
+
+        jMenuBar1.add(jMenu3);
 
         setJMenuBar(jMenuBar1);
 
@@ -207,13 +225,13 @@ public class main_window extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 836, Short.MAX_VALUE)
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1003, Short.MAX_VALUE)
             .addComponent(desktop, javax.swing.GroupLayout.Alignment.TRAILING)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(desktop)
+                .addComponent(desktop, javax.swing.GroupLayout.DEFAULT_SIZE, 469, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -265,7 +283,7 @@ public class main_window extends javax.swing.JFrame {
 			this.patient = new TEPSerie(patientDirPath);
                         JOptionPane.showMessageDialog(null, "Le dossier patient a été ouvert avec succès\n\n"+this.patient.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
                         this.patientDescriptTextField.setText(this.patient.toString());
-                        this.displayImagesMenuActionPerformed(evt);
+                        displayImages();
                         
                         
                         System.out.println(this.patient);
@@ -291,48 +309,6 @@ public class main_window extends javax.swing.JFrame {
             this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
         }
     }//GEN-LAST:event_openTEPSerieActionPerformed
-
-    private void displayImagesMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_displayImagesMenuActionPerformed
-        
-        if (this.patient != null) {
-            
-            if (patient instanceof TAPSerie) {
-                TAPSerieViewer tsv = new TAPSerieViewer((TAPSerie) this.patient);
-                tsv.setVisible(true);
-                tsv.setVisible(true);
-                this.desktop.add(tsv);
-                this.desktop.setSelectedFrame(tsv);
-            }
-            else {
-
-                PatientSerieViewer psv = new PatientSerieViewer(this.patient);
-                psv.setVisible(true);
-
-
-                //psv.setSize(this.viewerLabel.getSize());
-                //psv.setSize(this.viewerLabel.getSize());
-                psv.setVisible(true);
-                this.desktop.add(psv);
-                this.desktop.setSelectedFrame(psv);
-            }
-            
-            
-        }
-        else if (this.patientMultiSeries != null) {
-            PatientSerieViewer psv = new PatientSerieViewer(this.patientMultiSeries);
-            psv.show();
-            //Pour rendre la fenêtre immobile
-            
-            //psv.setSize(this.viewerLabel.getSize());
-            psv.setVisible(true);
-            this.desktop.add(psv);
-            this.desktop.setSelectedFrame(psv);
-        }
-        else {
-            JOptionPane.showMessageDialog(null, "Aucun patient sélectionné ", "Erreur", JOptionPane.ERROR_MESSAGE);
-
-        }
-    }//GEN-LAST:event_displayImagesMenuActionPerformed
 
     private void closeAllSeriesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllSeriesActionPerformed
         Component[] components = this.desktop.getComponents();
@@ -369,7 +345,7 @@ public class main_window extends javax.swing.JFrame {
         //SERIE STATIQUE
         TAPSerie staticSerie;
         this.patientDescriptTextField.append("Ouverture de la série statique en cours...\n");
-        staticSerie = chooseTAPSerie();
+        staticSerie = chooseTAPSerie(startDynSerie);
         
        
         TAPSerieViewer tsv = new TAPSerieViewer(staticSerie);
@@ -434,6 +410,7 @@ public class main_window extends javax.swing.JFrame {
             @Override
             public void run() {
                 try {
+                    //On attends la sélection de la coupe corporelle
                     thread.join();
                     patientDescriptTextField.append("Ouverture de la dernière série dynamique en cours...\n");
                     TEPSerie endDynSerie = chooseTEPSerie(false);
@@ -442,7 +419,13 @@ public class main_window extends javax.swing.JFrame {
                         try {
                             patientMultiSeries = new PatientMultiSeries(startDynSerie, staticSerie, endDynSerie);
                             JOptionPane.showMessageDialog(null, "La multi-acquisition a été ouverte avec succès", "Info", JOptionPane.PLAIN_MESSAGE);
-                            displayImagesMenuActionPerformed(evt);
+                            //On affiche les images de la mutli-série
+                            displayImages();
+                            
+                            //On active les méthodes patlak et hunter
+                            hunterQuantMethod.setEnabled(true);
+                            patlakQuantMethod.setEnabled(true);
+                            
                         } catch (SeriesOrderException ex) {
                             JOptionPane.showMessageDialog(null, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
                             patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
@@ -470,25 +453,23 @@ public class main_window extends javax.swing.JFrame {
 
     private void closeMultiAcqMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeMultiAcqMenuActionPerformed
         this.patientMultiSeries = null;
+        this.desktop.removeAll();
     }//GEN-LAST:event_closeMultiAcqMenuActionPerformed
 
     private void openTAPSerieActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openTAPSerieActionPerformed
-        if (this.patient != null || this.patientMultiSeries != null ) 
-            this.closeAllSeriesActionPerformed(evt);
-        
-        
-            
-        
+        if (this.patient != null || this.patientMultiSeries != null )
+        this.closeAllSeriesActionPerformed(evt);
+
         this.patientDescriptTextField.setText("Ouverture de la Série en cours...");
         int returnVal = patientChooser.showOpenDialog(this);
-        
+
         if (JFileChooser.APPROVE_OPTION == returnVal) {
-            
+
             File choosenFile;
             choosenFile = patientChooser.getSelectedFile();
-           
+
             // Un fois le dossier choisi
-            
+
             if (choosenFile != null) {
                 String patientDirPath;
                 if (choosenFile.isDirectory()) {
@@ -497,43 +478,43 @@ public class main_window extends javax.swing.JFrame {
                 else {
                     patientDirPath = choosenFile.getParent();
                 }
-                
-                
+
                 //On peut créer un nouveau patient
-                
-               
-		try {
-			this.patient = new TAPSerie(patientDirPath);
-                        JOptionPane.showMessageDialog(null, "La série TAP corps entier a été ouverte avec succès\n\n"+this.patient.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
-                        this.patientDescriptTextField.setText(this.patient.toString());
-                        this.displayImagesMenuActionPerformed(evt);
-                        
-                        
-                        System.out.println(this.patient);
-		} catch (NotDirectoryException | DicomFilesNotFoundException
-                        | BadParametersException e) {
-			// TODO Auto-generated catch block
-                   
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                        this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
-                        this.openTEPSerieActionPerformed(evt);
-		} catch (NoTAPSerieFoundException ex) { 
+
+                try {
+                    this.patient = new TAPSerie(patientDirPath);
+                    JOptionPane.showMessageDialog(null, "La série TAP corps entier a été ouverte avec succès\n\n"+this.patient.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
+                    this.patientDescriptTextField.setText(this.patient.toString());
+                    displayImages();
+
+                    System.out.println(this.patient);
+                } catch (NotDirectoryException | DicomFilesNotFoundException
+                    | BadParametersException e) {
+                    // TODO Auto-generated catch block
+
+                    JOptionPane.showMessageDialog(null, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                    this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
+                    this.openTEPSerieActionPerformed(evt);
+                } catch (NoTAPSerieFoundException ex) {
                     Logger.getLogger(main_window.class.getName()).log(Level.SEVERE, null, ex);
-                } 
-                
-		
-                
+                }
+
             }
             else {
                 JOptionPane.showMessageDialog(null, "Problem accessing the file!", "Erreur", JOptionPane.ERROR_MESSAGE);
                 this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
             }
-           
+
         } else {
             System.out.println("File access cancelled by user.");
             this.patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
         }
     }//GEN-LAST:event_openTAPSerieActionPerformed
+
+    private void patlakQuantMethodActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_patlakQuantMethodActionPerformed
+        
+        Patlak patlak = new Patlak(patientMultiSeries);
+    }//GEN-LAST:event_patlakQuantMethodActionPerformed
     /**
      * Ouvre une fenêtre pour choisir une série de patient
      * @param dynChoose Si vaut true alors on ouvre une série dynamique, sinon une série statique
@@ -625,11 +606,13 @@ public class main_window extends javax.swing.JFrame {
     private javax.swing.JMenuItem closeAllSeries;
     private javax.swing.JMenuItem closeMultiAcqMenu;
     private javax.swing.JDesktopPane desktop;
-    private javax.swing.JMenuItem displayImagesMenu;
     private javax.swing.JFileChooser dynSerieChooser;
+    private javax.swing.JMenuItem hunterQuantMethod;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
@@ -638,10 +621,11 @@ public class main_window extends javax.swing.JFrame {
     private javax.swing.JMenuItem openTEPSerie;
     private javax.swing.JFileChooser patientChooser;
     private javax.swing.JTextArea patientDescriptTextField;
+    private javax.swing.JMenuItem patlakQuantMethod;
     private javax.swing.JFileChooser statSerieChooser;
     // End of variables declaration//GEN-END:variables
 
-    private synchronized TAPSerie chooseTAPSerie() {
+    private synchronized TAPSerie chooseTAPSerie(TEPSerie startTEPSerie) {
         TAPSerie tapSerie = null;
         this.patientDescriptTextField.setText("Ouverture de la série statique en cours...");
        
@@ -670,7 +654,7 @@ public class main_window extends javax.swing.JFrame {
                
 		try {
 			System.out.println("INIT SERIE TAP");
-                        tapSerie = new TAPSerie(patientDirPath, true);
+                        tapSerie = new TAPSerie(patientDirPath, true, startTEPSerie);
                         JOptionPane.showMessageDialog(null, "L'acquisition a été ouverte avec succès\n\n"+tapSerie.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
                         this.patientDescriptTextField.append(tapSerie.toString());
                         
@@ -703,5 +687,44 @@ public class main_window extends javax.swing.JFrame {
             System.out.println("File access cancelled by user.");
         }
         return tapSerie;
+    }
+    
+    private void displayImages() {
+        if (this.patient != null) {
+
+            if (patient instanceof TAPSerie) {
+                this.tsv = new TAPSerieViewer((TAPSerie) this.patient);
+                tsv.setVisible(true);
+                tsv.setVisible(true);
+                this.desktop.add(tsv);
+                this.desktop.setSelectedFrame(tsv);
+            }
+            else {
+
+                this.psv = new PatientSerieViewer(this.patient);
+                psv.setVisible(true);
+
+                //psv.setSize(this.viewerLabel.getSize());
+                //psv.setSize(this.viewerLabel.getSize());
+                psv.setVisible(true);
+                this.desktop.add(psv);
+                this.desktop.setSelectedFrame(psv);
+            }
+
+        }
+        else if (this.patientMultiSeries != null) {
+            this.psv = new PatientSerieViewer(this.patientMultiSeries);
+            psv.show();
+            //Pour rendre la fenêtre immobile
+
+            //psv.setSize(this.viewerLabel.getSize());
+            psv.setVisible(true);
+            this.desktop.add(psv);
+            this.desktop.setSelectedFrame(psv);
+        }
+        else {
+            JOptionPane.showMessageDialog(null, "Aucun patient sélectionné ", "Erreur", JOptionPane.ERROR_MESSAGE);
+
+        }
     }
 }

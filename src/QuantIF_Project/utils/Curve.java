@@ -1,4 +1,8 @@
-package QuantIF_Project.gui;
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
+ */
+package QuantIF_Project.utils;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

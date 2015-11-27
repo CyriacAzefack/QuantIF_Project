@@ -5,7 +5,7 @@
  */
 package QuantIF_Project.gui;
 
-import QuantIF_Project.patient.DicomImage;
+import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.serie.Block;
@@ -31,7 +31,6 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JInternalFrame;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
-import javax.vecmath.Color3f;
 
 
 
@@ -51,12 +50,12 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     /**
      * TEPSerie à afficher
      */
-    private TAPSerie tapSerie;
+    private final TAPSerie tapSerie;
     
     /**
      * PatientMultiSeries à afficher
      */
-    private PatientMultiSeries patientMultiSeries;
+    private final PatientMultiSeries patientMultiSeries;
     
     
     /**
@@ -160,7 +159,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         prevButton = new javax.swing.JButton();
         imageSlider = new javax.swing.JSlider();
         imageIDTextField = new javax.swing.JTextField();
-        imageLabel = new javax.swing.JLabel();
+        tapImageLabel = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         acquisitionTimeTextField = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
@@ -171,12 +170,14 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         jLabel7 = new javax.swing.JLabel();
         tridimObsButton = new javax.swing.JButton();
         chooseBodyBlockButton = new javax.swing.JButton();
+        prevTEPSerieButton = new javax.swing.JToggleButton();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
         setBorder(null);
-        setTitle("Choisir une coupe corporelle");
+        setIconifiable(true);
+        setTitle("TAP Serie Viewer");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setFocusable(false);
         try {
@@ -226,14 +227,14 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         });
         getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 610, 60, 28));
 
-        imageLabel.setMaximumSize(new java.awt.Dimension(700, 700));
-        imageLabel.setMinimumSize(new java.awt.Dimension(512, 512));
-        imageLabel.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+        tapImageLabel.setMaximumSize(new java.awt.Dimension(700, 700));
+        tapImageLabel.setMinimumSize(new java.awt.Dimension(512, 512));
+        tapImageLabel.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
             public void mouseWheelMoved(java.awt.event.MouseWheelEvent evt) {
-                imageLabelMouseWheelMoved(evt);
+                tapImageLabelMouseWheelMoved(evt);
             }
         });
-        getContentPane().add(imageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 10, 600, 600));
+        getContentPane().add(tapImageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 10, 600, 600));
 
         jLabel4.setText("Temps d'acquisition (secondes)");
         getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 730, -1, -1));
@@ -248,9 +249,11 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         });
         getContentPane().add(acquisitionTimeTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 720, 60, 30));
 
+        jLabel5.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jLabel5.setText("Max");
-        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 20, -1, -1));
+        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 30, -1, -1));
 
+        sliderMax.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         sliderMax.setMaximum(100000);
         sliderMax.setMinorTickSpacing(1);
         sliderMax.setPaintLabels(true);
@@ -265,11 +268,11 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 sliderMaxStateChanged(evt);
             }
         });
-        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 10, 400, -1));
+        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 10, 400, 50));
 
         labelSliceList.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         labelSliceList.setText("Coupe corporelle");
-        getContentPane().add(labelSliceList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 110, 140, 20));
+        getContentPane().add(labelSliceList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 180, 250, 50));
 
         frameList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         frameList.addActionListener(new java.awt.event.ActionListener() {
@@ -277,8 +280,9 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 frameListActionPerformed(evt);
             }
         });
-        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1280, 110, 110, 30));
+        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1280, 180, 150, 40));
 
+        sliderMin.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         sliderMin.setMaximum(100000);
         sliderMin.setSnapToTicks(true);
         sliderMin.setValueIsAdjusting(true);
@@ -287,10 +291,11 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 sliderMinStateChanged(evt);
             }
         });
-        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 40, 400, -1));
+        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 70, 400, 40));
 
+        jLabel7.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jLabel7.setText("Min");
-        getContentPane().add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 40, -1, -1));
+        getContentPane().add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 70, -1, 30));
 
         tridimObsButton.setText("Observation 3D");
         tridimObsButton.addActionListener(new java.awt.event.ActionListener() {
@@ -308,7 +313,16 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 chooseBodyBlockButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(chooseBodyBlockButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 240, 280, 80));
+        getContentPane().add(chooseBodyBlockButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 290, 280, 80));
+
+        prevTEPSerieButton.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        prevTEPSerieButton.setText("<html>Prévisualisation série TEP de départ </html>");
+        prevTEPSerieButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                prevTEPSerieButtonActionPerformed(evt);
+            }
+        });
+        getContentPane().add(prevTEPSerieButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 190, 150, 60));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -376,9 +390,9 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
        
     }//GEN-LAST:event_frameListActionPerformed
 
-    private void imageLabelMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_imageLabelMouseWheelMoved
+    private void tapImageLabelMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_tapImageLabelMouseWheelMoved
         // TODO add your handling code here:
-    }//GEN-LAST:event_imageLabelMouseWheelMoved
+    }//GEN-LAST:event_tapImageLabelMouseWheelMoved
 
     private void sliderMinStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMinStateChanged
         this.minBrightness = this.sliderMin.getValue();
@@ -439,6 +453,23 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         
        
     }//GEN-LAST:event_chooseBodyBlockButtonActionPerformed
+
+    private void prevTEPSerieButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_prevTEPSerieButtonActionPerformed
+        if(this.prevTEPSerieButton.isSelected()) {
+            this.displayedImages = this.tapSerie.getStartTEPSerieSummAll();
+        }
+        else {
+            try {
+                this.displayedImages = getImagesToDisplay(this.frameList.getSelectedIndex());
+                
+            } catch (BadParametersException ex) {
+                Logger.getLogger(TAPSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        if (this.currentImageID > this.displayedImages.length)
+            this.currentImageID = 0;
+        display(this.currentImageID);
+    }//GEN-LAST:event_prevTEPSerieButtonActionPerformed
     
     /**
      * Affiche l'image d'id imageID dans la fenetre
@@ -467,7 +498,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         
         //On l'affiche dans la zone prévu a cet effet
         ImageIcon ii = new ImageIcon(bufferedImage);         
-        imageLabel.setIcon(ii);
+        tapImageLabel.setIcon(ii);
         imageIDTextField.setText((imageID + 1) + " / " + (this.displayedImages.length));
         /*
         this.champ1.setText(dcm.getAttribute(TagFromName.StudyInstanceUID));
@@ -558,7 +589,6 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     private javax.swing.JButton chooseBodyBlockButton;
     private javax.swing.JComboBox frameList;
     private javax.swing.JTextField imageIDTextField;
-    private javax.swing.JLabel imageLabel;
     private javax.swing.JSlider imageSlider;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
@@ -567,8 +597,10 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     private javax.swing.JFileChooser maskFileChooser;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;
+    private javax.swing.JToggleButton prevTEPSerieButton;
     private javax.swing.JSlider sliderMax;
     private javax.swing.JSlider sliderMin;
+    private javax.swing.JLabel tapImageLabel;
     private javax.swing.JButton tridimObsButton;
     // End of variables declaration//GEN-END:variables
     

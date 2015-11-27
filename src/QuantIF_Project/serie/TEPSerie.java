@@ -1,7 +1,10 @@
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
+ */
 package QuantIF_Project.serie;
 
 import QuantIF_Project.patient.AortaResults;
-import QuantIF_Project.patient.DicomImage;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
@@ -183,28 +186,11 @@ public class TEPSerie implements Serie{
             this.parent = null;  
             this.isFirstInMultiAcq = false;
             
-            /*
-            DicomImage di = dicomImages.get(50);
-            DicomImage di2 = dicomImages.get(60);
-            //di.srcImg.show();
-            ImagePlus imp1 = di.srcImg;
-            ImagePlus imp2 = di2.srcImg;
-            ImagePlus imp3 = new ImagePlus("", imp2.getProcessor().convertToFloatProcessor());
+
+           
             
-            ImageStack imStack = new ImageStack(width, height);
-            imStack.addSlice(imp1.getProcessor().convertToFloatProcessor());
-            imStack.addSlice(imp2.getProcessor().convertToFloatProcessor());
-            ImagePlus imp = new ImagePlus("", imStack);
-            imp.show();
-            RoiManager rm = new RoiManager();
-            Roi roi = new Roi(0, 0, imp.getWidth(), imp.getHeight());
-            rm.addRoi(roi);
-            rm.select(0);
-            //rm.runCommand(imp2, "Multi Measure");
-            rm.multiMeasure(imp).show("Resultats");
-            */
-           /*
             //Séparation de la série en sous-série
+            /*
             String outputDirDyn1 = "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\Test Multi acquisitions\\TEPDyn1\\";
             String outputDirDyn2 = "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\Test Multi acquisitions\\TEPDyn2\\";
             String outputDirStatic = "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\Test Multi acquisitions\\TEPStatic\\";
@@ -213,7 +199,7 @@ public class TEPSerie implements Serie{
             DicomUtils.emptyDirectory(new File(outputDirDyn2));
             DicomUtils.emptyDirectory(new File(outputDirStatic));
             try {
-                createSubDynAcquisition(outputDirDyn1, 0, 7);
+                createSubDynAcquisition(outputDirDyn1, 2, 9);
                 createSubDynAcquisition(outputDirDyn2, 27, 33);
                 createSubDynAcquisition(outputDirStatic, 20);
             } catch (DicomException | IOException ex) {
@@ -862,7 +848,18 @@ public class TEPSerie implements Serie{
     public Date getSerieStartDate() {
         return DicomUtils.dicomDateToDate(this.serieStartDate);
     }
-
+    
+    public BufferedImage[] getSummALL() {
+        BufferedImage[] buffs = new BufferedImage[this.summALL.length];
+        FloatProcessor fp;
+        for (int i = 0; i < buffs.length; i++) {
+            float[] pixels = summALL[i];
+            fp = new FloatProcessor(width, height, pixels);
+            buffs[i] = fp.getBufferedImage();
+        }
+        
+        return buffs;
+    }
    
 
    

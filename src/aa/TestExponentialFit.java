@@ -1,6 +1,10 @@
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
+ */
 package aa;
 
-import QuantIF_Project.gui.Curve;
+import QuantIF_Project.utils.Curve;
 import ij.measure.CurveFitter;
 import ij.util.ArrayUtil;
 import java.awt.Color;
@@ -20,9 +24,13 @@ import org.jfree.ui.RefineryUtilities;
 
 
 
-public class Test {
+public class TestExponentialFit {
     
-    
+    /**
+     * TEST FIT EXPONENETIEL
+     * @param args
+     * @throws IOException 
+     */
     public static void main(String[] args) throws IOException {
         BufferedReader br = null;
         try {
@@ -136,12 +144,12 @@ public class Test {
             
             
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(Test.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TestExponentialFit.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
                 br.close();
             } catch (IOException ex) {
-                Logger.getLogger(Test.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestExponentialFit.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         

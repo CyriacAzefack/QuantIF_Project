@@ -1,11 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
  */
 package QuantIF_Project.patient;
 
-import QuantIF_Project.serie.TimeFrame;
+import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.TEPSerie;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.PatientStudyException;
@@ -15,6 +14,7 @@ import QuantIF_Project.serie.Serie;
 import QuantIF_Project.serie.TAPSerie;
 import com.pixelmed.dicom.TagFromName;
 import ij.gui.Roi;
+import ij.measure.ResultsTable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
@@ -53,14 +53,6 @@ public class PatientMultiSeries {
      */
     private final String[] tagsToCheck;
     
-    /**
-     * Construit une série patient à l'aide de plusieurs acquisitions
-     * @param startDynSerie Série dynamique de départ
-     * @param staticSerie Série statique
-     * @param endDynSerie Série dynamique de fin
-     * @throws PatientStudyException
-     *      Si tous les images n'appartiennent pas au même patient
-     */
 
     /**
      * Construit une série patient à l'aide de plusieurs acquisitions
@@ -87,25 +79,16 @@ public class PatientMultiSeries {
         this.tagsToCheck = new String [3];
        
             
-        //On récupère ce format sur la premiere image de la sous-acquisition de départ
-        /*
-        try {
-            DicomImage di = this.startDynPatient.getBlock(0).getDicomImage(0);
-            this.tagsToCheck[0] = di.getAttribute(TagFromName.PatientName);
-            this.tagsToCheck[1] =  di.getAttribute(TagFromName.PatientID);
-            this.tagsToCheck[2] = di.getAttribute(TagFromName.StudyInstanceUID);
-                  
-            this.checkMatchPatientSerieStudy(this.startDynPatient);
-            this.checkMatchPatientSerieStudy(this.staticPatient);
-            this.checkMatchPatientSerieStudy(this.endDynPatient);
-        } catch (BadParametersException ex) {
-            Logger.getLogger(PatientMultiSeries.class.getName()).log(Level.SEVERE, null, ex);
-        }
-       */
-        
+       
+
         
         this.aortaResults = new AortaResults(startTEPSerie.getName());
         
+        //On vérifie que les série appartiennent tous au meme patient
+        //CheckSamePatient();
+        
+        
+        //On vérifie si les séries ont été rentrées dans le bon ordre
         //CheckSerieOrder();
         
     }
@@ -227,6 +210,35 @@ public class PatientMultiSeries {
         
         
             
+    }
+    
+    /**
+     * On vérifie que toutes les séries appartiennent au même patient
+     * @throws PatientStudyException 
+     */
+    private void CheckSamePatient() throws PatientStudyException {
+        try {
+            DicomImage di = this.startTEPSerie.getBlock(0).getDicomImage(0);
+            this.tagsToCheck[0] = di.getAttribute(TagFromName.PatientName);
+            this.tagsToCheck[1] =  di.getAttribute(TagFromName.PatientID);
+            this.tagsToCheck[2] = di.getAttribute(TagFromName.StudyInstanceUID);
+            this.checkMatchPatientSerieStudy(this.startTEPSerie);
+            this.checkMatchPatientSerieStudy(this.staticTAPSerie);
+            this.checkMatchPatientSerieStudy(this.endTEPSerie);
+        } catch (BadParametersException ex) {
+            Logger.getLogger(PatientMultiSeries.class.getName()).log(Level.SEVERE, null, ex);
+        }
+       
+    }
+    
+    public void loadAortaResult(String path) {
+        ResultsTable rt = ResultsTable.open2(path);
+        
+        this.aortaResults.loadResultsTable(rt);
+    }
+    
+    public AortaResults getAortaResults() {
+        return this.aortaResults;
     }
     
     

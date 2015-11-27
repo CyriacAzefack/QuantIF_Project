@@ -1,11 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
  */
 package QuantIF_Project.utils;
 
-import QuantIF_Project.patient.DicomImage;
+import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.TEPSerie;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;

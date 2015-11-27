@@ -1,16 +1,12 @@
-/*
- * This Code belongs to his creator Cyriac Azefack and the lab QuanttIF of the "Centre Henri Becquerel"
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
  *   * 
  */
 package QuantIF_Project.patient;
 
-import QuantIF_Project.gui.Curve;
-import QuantIF_Project.patient.exceptions.BadParametersException;
-import QuantIF_Project.utils.MathUtils;
+import QuantIF_Project.utils.Curve;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jfree.ui.RefineryUtilities;
 
 /**
@@ -131,6 +127,17 @@ public class AortaResults {
         
         System.out.println("Size de results à la fin : " + this.resultTable.size());
         return this;
+    }
+    
+    /**
+     * Charge et affiche des résultats d'aorte
+     * @param rt 
+     */
+    public void loadResultsTable(ResultsTable rt) {
+        this.setResultsTable(rt);
+        
+        //Affichage des résultats chargés
+        this.display(title);
     }
     
     

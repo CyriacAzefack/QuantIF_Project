@@ -1,5 +1,5 @@
-/*
- * This Code belongs to his creator Cyriac Azefack and the lab QuanttIF of the "Centre Henri Becquerel"
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
  *   * 
  */
 package aa;
@@ -7,17 +7,10 @@ package aa;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.process.FloatProcessor;
 import java.awt.Component;
 import java.awt.Frame;
-import java.awt.Window;
-import java.awt.event.ComponentListener;
-import java.awt.event.ContainerListener;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.image.BufferedImage;
-import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 
 /**
@@ -40,27 +33,31 @@ public class testDisplay extends javax.swing.JFrame {
         
         WindowManager.setTempCurrentImage(imp);
         Frame frame = WindowManager.getCurrentWindow();
-       frame.dispose();
+        frame.dispose();
         
         //window.setVisible(true);
         //window.toFront();
         
-        JInternalFrame jiFrame = new JInternalFrame(path);
+        
         //jiFrame.setContentPane(frame.getFocusCycleRootAncestor());
         
         Component[] comps = frame.getComponents();
         
-        MouseWheelListener[] mwlisteners = frame.getMouseWheelListeners();
+       
+        //MouseWheelListener[] mwlisteners = frame.getMouseWheelListeners();
        
         
         for (Component comp : comps) {
-            jiFrame.add(comp);  
+            System.out.println(comp.toString());
+            this.panel.add(comp);  
         }
         
+        imp.setProcessor(new FloatProcessor(600,600));
+        /*
         for (MouseWheelListener comp : mwlisteners) {
             jiFrame.addMouseWheelListener(comp);
         }
-       
+       */
         /*
         for (ContainerListener list : listeners) {
             jiFrame.addContainerListener(list);
@@ -68,11 +65,11 @@ public class testDisplay extends javax.swing.JFrame {
         */
         //jiFrame.setContentPane(((JFrame)frame).getContentPane());
         
-        jiFrame.setSize(this.getSize());
-        jiFrame.setVisible(true);
+        panel.setSize(this.getSize());
+        panel.setVisible(true);
         
         
-        this.add(jiFrame);
+        
         //buff = PatientSerieViewer.rescale(buff, this.getWidth(), this.getHeight());
         
     }
@@ -86,19 +83,26 @@ public class testDisplay extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        panel = new javax.swing.JPanel();
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Test integration IJ");
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 957, Short.MAX_VALUE)
+        panel.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 0, 0)));
+        panel.setToolTipText("");
+
+        javax.swing.GroupLayout panelLayout = new javax.swing.GroupLayout(panel);
+        panel.setLayout(panelLayout);
+        panelLayout.setHorizontalGroup(
+            panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 955, Short.MAX_VALUE)
         );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 586, Short.MAX_VALUE)
+        panelLayout.setVerticalGroup(
+            panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 584, Short.MAX_VALUE)
         );
+
+        getContentPane().add(panel, java.awt.BorderLayout.CENTER);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -133,5 +137,6 @@ public class testDisplay extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel panel;
     // End of variables declaration//GEN-END:variables
 }

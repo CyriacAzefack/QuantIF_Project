@@ -1,10 +1,9 @@
-/*
- * This Code belongs to his creator Cyriac Azefack and the lab QuanttIF of the "Centre Henri Becquerel"
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
  *   * 
  */
 package QuantIF_Project.serie;
 
-import QuantIF_Project.patient.DicomImage;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import com.pixelmed.dicom.TagFromName;
 import java.util.ArrayList;

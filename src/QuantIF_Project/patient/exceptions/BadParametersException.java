@@ -1,3 +1,7 @@
+/* 
+ * This Code belongs to his creator Cyriac Azefack and the lab QuantIF of the "Centre Henri Becquerel of Rouen"
+ *   * 
+ */
 package QuantIF_Project.patient.exceptions;
 
 public class BadParametersException extends Exception{
