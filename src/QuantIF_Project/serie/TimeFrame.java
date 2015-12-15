@@ -47,6 +47,11 @@ public class TimeFrame extends Block implements Comparable<TimeFrame>{
     private double endTime;
     
     /**
+     * Heure d'acquisition de cette frame
+     */
+    private String acquisitionTime;
+    
+    /**
      * On crée une TimeFrame vide 
      * @param nbMaxDicomImages nombre de DicomImages max que devra contenir cette TimeFrame
      * @param acquisitionTime heure d'acquisition
@@ -67,7 +72,7 @@ public class TimeFrame extends Block implements Comparable<TimeFrame>{
         if (acquisitionTime.isEmpty())
             throw new BadParametersException("L'heure d'acquisition d'une coupe temporelle ne peut être vide");
         
-       
+        this.acquisitionTime = acquisitionTime;
         
         this.nbMaxDicomImages = nbMaxDicomImages;
         this.dicomImages = new DicomImage[this.nbMaxDicomImages];
@@ -152,6 +157,7 @@ public class TimeFrame extends Block implements Comparable<TimeFrame>{
         return this.dicomImages[imageIndex];
     }
     
+    @Override
     public int size() {
         return this.dicomImages.length;
     }
@@ -159,6 +165,11 @@ public class TimeFrame extends Block implements Comparable<TimeFrame>{
     public void setTime() {
         this.startTime = Double.valueOf(this.dicomImages[0].getAttribute(TagFromName.FrameReferenceTime))/1000;
         this.endTime = this.startTime + Double.valueOf(this.dicomImages[0].getAttribute(TagFromName.ActualFrameDuration))/1000;
+    }
+
+    @Override
+    public String getAcquisitionTime() {
+        return this.acquisitionTime;
     }
     
 }

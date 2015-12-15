@@ -18,8 +18,11 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.gui.ImageCanvas;
+import ij.gui.Roi;
 import ij.plugin.LutLoader;
 import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.LUT;
 import ij.process.ShortProcessor;
@@ -35,13 +38,12 @@ import java.awt.Image;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ButtonGroup;
 import javax.swing.ComboBoxModel;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
 
@@ -59,7 +61,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     /**
      * TEPSerie à afficher
      */
-    private Serie patient;
+    private static Serie patient;
     
     /**
      * PatientMultiSeries à afficher
@@ -123,7 +125,8 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     /**
      * Taille de l'image affichée
      */
-    private final static int IMAGE_SIZE = 600;
+    public final static int IMAGE_SIZE = 600;
+    
     
     /**
      * Creates new form AfficherImages
@@ -133,14 +136,54 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     public PatientSerieViewer(Serie p) {
         initComponents();
         
-        this.currentImageTitle = "";
-        this.currentImagePlus = new ImagePlus();
-        this.patient = p;
+        currentImageTitle = "Frame 1";
+        ImageProcessor ip = new FloatProcessor(p.getWidth(), p.getHeight());
+        currentImagePlus = new ImagePlus(currentImageTitle, ip);
+        
+        patient = p;
         this.patientMultiSeries = null;
         
         this.radioButtonDyn1.setVisible(false);
         this.radioButtonStat.setVisible(false);
         this.radioButtonDyn2.setVisible(false);
+        
+        //Image Panel settings
+        imagePanel.removeAll();
+        imagePanel.repaint();
+        
+       
+        currentImagePlus.show();
+        
+        
+        
+        WindowManager.setTempCurrentImage(currentImagePlus);
+        Frame frame = WindowManager.getCurrentWindow(); //getFrame(currentImageTitle);
+        
+        frame.dispose();
+        ImageCanvas canvas = (ImageCanvas) frame.getComponent(0);
+       
+        
+        //On affiche l'image dans le panel
+        //System.out.println(comp.toString());
+        this.imagePanel.add(canvas, BorderLayout.CENTER);
+        
+        
+         //On y ajoute la gestion du ZOOM
+        
+        imagePanel.addMouseWheelListener((MouseWheelEvent e) -> {
+            int zoom = e.getWheelRotation();
+            
+            if (zoom < 0 && e.isControlDown()) {
+                //Zoom in
+                //IJ.run("In"); 
+                canvas.zoomIn(e.getX(), e.getY());
+            } 
+            else if (zoom > 0 && e.isControlDown()){
+                canvas.zoomOut(e.getX(), e.getY());
+            }
+        });
+        
+        imagePanel.validate();
         
         updateComponents();
         
@@ -148,15 +191,15 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         display(currentImageID);
         
         //On empeche la fenêtre interne de pouvoir être déplacée
-        BasicInternalFrameUI ui = (BasicInternalFrameUI) this.getUI();
-        Component northPane = ui.getNorthPane();
+        BasicInternalFrameUI bifui = (BasicInternalFrameUI) this.getUI();
+        Component northPane = bifui.getNorthPane();
         MouseMotionListener[] motionListeners = (MouseMotionListener[]) northPane.getListeners(MouseMotionListener.class);
 
         for (MouseMotionListener listener: motionListeners)
             northPane.removeMouseMotionListener(listener);
    
         
-        //On gère les radioButton pr les différentes séries
+        
      
         
     }
@@ -223,7 +266,6 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
         setBorder(null);
-        setIconifiable(true);
         setTitle("Patient Viewer");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setFocusable(false);
@@ -330,11 +372,11 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         });
         getContentPane().add(radioButtonStat, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 280, 210, 40));
 
-        imagePanel.setBorder(new javax.swing.border.MatteBorder(null));
+        imagePanel.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 153), 3, true));
         imagePanel.setPreferredSize(new Dimension(IMAGE_SIZE, IMAGE_SIZE));
         imagePanel.setRequestFocusEnabled(false);
         imagePanel.setLayout(new javax.swing.BoxLayout(imagePanel, javax.swing.BoxLayout.LINE_AXIS));
-        getContentPane().add(imagePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 20, 640, 580));
+        getContentPane().add(imagePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 10, 600, 600));
 
         nextButton.setText(">>");
         nextButton.addActionListener(new java.awt.event.ActionListener() {
@@ -398,7 +440,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                     .addGroup(imageOptionsPanelLayout.createSequentialGroup()
                         .addComponent(jLabel4)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(acquisitionTimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(acquisitionTimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addComponent(imageSlider, javax.swing.GroupLayout.DEFAULT_SIZE, 628, Short.MAX_VALUE))
                 .addContainerGap())
@@ -501,13 +543,13 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
 
     private void frameListActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_frameListActionPerformed
         try {
-            if (this.frameList.getSelectedIndex() >= 0) {
-                int frameIndex = this.frameList.getSelectedIndex();
-                this.currentImageTitle = "Frame " + (frameIndex + 1);
-                this.displayedImages = getImagesToDisplay(frameIndex);
-                this.imagesPerBlock = this.displayedImages.length;
+            if (frameList.getSelectedIndex() >= 0) {
+                int frameIndex = frameList.getSelectedIndex();
+                currentImageTitle = "Frame " + (frameIndex + 1);
+                displayedImages = getImagesToDisplay(frameIndex);
+                this.imagesPerBlock = displayedImages.length;
                 imageSlider.setMaximum(imagesPerBlock);
-                display(this.currentImageID);
+                display(currentImageID);
 
                 //On affiche l'acquisition time
                 //this.acquisitionTimeTextField.setText("" + patient.getBlock(frameIndex).getMidTime());
@@ -537,19 +579,19 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         else {
             try {
                 //On affiche les frames
-                this.displayedImages = getImagesToDisplay(this.frameList.getSelectedIndex());
+                PatientSerieViewer.displayedImages = getImagesToDisplay(this.frameList.getSelectedIndex());
             } catch (BadParametersException ex) {
                 Logger.getLogger(PatientSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        display(this.currentImageID);
+        display(PatientSerieViewer.currentImageID);
         
     }//GEN-LAST:event_summButtonActionPerformed
 
     private void sliderMinStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMinStateChanged
-        this.minBrightness = this.sliderMin.getValue();
+        PatientSerieViewer.minBrightness = this.sliderMin.getValue();
          this.currentLUT.min = this.sliderMin.getValue();
-        display(this.currentImageID);
+        display(PatientSerieViewer.currentImageID);
     }//GEN-LAST:event_sliderMinStateChanged
 
     private void saveSummsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveSummsButtonActionPerformed
@@ -557,6 +599,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         String filename;
         for (int timeSliceIndex = 0; timeSliceIndex < this.nbTimeSlices; timeSliceIndex++) {
             try {
+                
                 arrayToSave = getSummSlices(0, timeSliceIndex);
                 filename = "tmp\\summ\\1_"+(timeSliceIndex+1)+".tiff";
                 DicomUtils.saveImagesAsTiff(arrayToSave, filename);
@@ -570,19 +613,19 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     private void radioButtonDyn1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonDyn1ActionPerformed
         this.patient = this.patientMultiSeries.getStartDynSerie();
         updateComponents();
-        this.display(this.currentImageID);
+        display(currentImageID);
     }//GEN-LAST:event_radioButtonDyn1ActionPerformed
 
     private void radioButtonStatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonStatActionPerformed
         this.patient = this.patientMultiSeries.getStaticSerie();
         updateComponents();
-        this.display(this.currentImageID);
+        display(currentImageID);
     }//GEN-LAST:event_radioButtonStatActionPerformed
 
     private void radioButtonDyn2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonDyn2ActionPerformed
         this.patient = this.patientMultiSeries.getEndDynSerie();
         updateComponents();
-        this.display(this.currentImageID);
+        display(currentImageID);
     }//GEN-LAST:event_radioButtonDyn2ActionPerformed
 
     private void radioButtonDyn1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_radioButtonDyn1StateChanged
@@ -688,12 +731,18 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         displayImage(bufferedImage);
         
         imageIDTextField.setText((imageID + 1) + " / " + (displayedImages.length));
-        /*
-        this.champ1.setText(dcm.getAttribute(TagFromName.StudyInstanceUID));
-        this.champ2.setText(""+dcm.getTimeSlice());
-        this.champ3.setText(""+dcm.getSlice());
-        */
-       
+        
+        int blockIndex = frameList.getSelectedIndex();
+        try {
+            if (blockIndex >= 0) {
+                String aqTime  = patient.getBlock(blockIndex).getAcquisitionTime();
+                SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
+                PatientSerieViewer.acquisitionTimeTextField.setText(sdf.format(DicomUtils.dicomDateToDate(aqTime)));
+            }
+        } catch (BadParametersException ex) {
+            Logger.getLogger(PatientSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         
     }
     
@@ -718,7 +767,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         //On l'affiche dans la zone prévu a cet effet
        
         currentImagePlus.setProcessor(new ByteProcessor(bufferedImage));
-        
+       
         //System.out.println("Panel component " + imagePanel.getComponentCount());
          
     }
@@ -799,8 +848,8 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField acquisitionTimeTextField;
-    private javax.swing.JComboBox frameList;
+    private static javax.swing.JTextField acquisitionTimeTextField;
+    private static javax.swing.JComboBox frameList;
     private static javax.swing.JTextField imageIDTextField;
     private javax.swing.JPanel imageOptionsPanel;
     private javax.swing.JPanel imagePanel;
@@ -859,7 +908,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         System.out.println("On mets à jour les composants");
        //this.nbImages = p.getMaxDicomImage();
         this.pixelUnity = this.patient.getPixelUnity();
-        this.currentImageID = 0;
+        currentImageID = 0;
         
         
         
@@ -875,14 +924,14 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         this.nbTimeSlices = this.patient.getNbBlocks();
         
          try {
-            this.displayedImages = getImagesToDisplay(0);
+            displayedImages = getImagesToDisplay(0);
         } catch (BadParametersException ex) {
             Logger.getLogger(PatientSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
         }
         
          //Slider de luminosité
          //On sature le moins possible l'image au début
-        this.sliderMax.setValue(this.sliderMax.getMaximum());
+        this.sliderMax.setValue(this.sliderMax.getMaximum()/2);
         this.sliderMin.setValue(this.sliderMax.getMinimum());
         
         
@@ -906,11 +955,11 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         if (this.patient instanceof TAPSerie) {
             this.labelSliceList.setText("Coupe corporelle");
         }
-        this.frameList.removeAllItems();
+        frameList.removeAllItems();
         this.summ1.removeAllItems();
         this.summ2.removeAllItems();
         for (int i=0; i<this.patient.getNbBlocks(); i++) {
-            this.frameList.addItem("" + (i+1));
+            frameList.addItem("" + (i+1));
             this.summ1.addItem("" + (i+1));
             this.summ2.addItem("" + (i+1));
         }
@@ -920,38 +969,8 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         imageIDTextField.setEditable(false);
         acquisitionTimeTextField.setEditable(false);
         
-        //Image Panel settings
-        imagePanel.removeAll();
-        currentImagePlus.show();
         
-        WindowManager.setTempCurrentImage(currentImagePlus);
-        Frame frame = WindowManager.getCurrentWindow();
-        frame.dispose();
-        
-        Component[] comps = frame.getComponents();
-        
-        
-        for (Component comp : comps) {
-            System.out.println(comp.toString());
-            this.imagePanel.add(comp, BorderLayout.CENTER);
-        }
-        
-         //On y ajoute la gestion du ZOOM
-        imagePanel.addMouseWheelListener((MouseWheelEvent e) -> {
-            int zoom = e.getWheelRotation();
-            
-            if (zoom < 0 && e.isControlDown()) {
-                //Zoom in
-                ImageProcessor mask = currentImagePlus.getProcessor().crop();
-                displayImage(mask.getBufferedImage());
-                //IJ.run("To Selection");
-            } 
-            else if (zoom > 0 && e.isControlDown()){
-                display(currentImageID);
-            }
-        });
-        imagePanel.revalidate();
-        this.repaint();
+        this.revalidate();
        
     }
     
@@ -962,6 +981,10 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         currentImageTitle = title;
         WindowManager.setTempCurrentImage(currentImagePlus);
         
+    }
+    
+    public static Roi getRoi() {
+        return currentImagePlus.getRoi();
     }
   
 

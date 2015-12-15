@@ -69,6 +69,7 @@ public class TAPSerie implements Serie{
     private String weight;
     private final int width;
     private final int height;
+    private String directoryPath;
     
     /**
      * La série fait partie d'une acquisition multiple
@@ -94,6 +95,10 @@ public class TAPSerie implements Serie{
      */
     public TAPSerie(String dirPath) throws NotDirectoryException, DicomFilesNotFoundException, BadParametersException, NoTAPSerieFoundException {
         
+         if (dirPath == null) 
+            throw new BadParametersException("Le chemin rentré est invalide.");
+        
+        this.directoryPath = dirPath;
         this.dicomImages = DicomUtils.checkDicomImages(dirPath);
         this.name = dicomImages.get(0).getAttribute(TagFromName.PatientName);
 
@@ -187,12 +192,20 @@ public class TAPSerie implements Serie{
     
     /**
      * On selectionne la partie du corps qu'on utilise pour l'étude
-     * @param bodyBlockIndex index de la partie du corps sélectrionnée
+     * @param imageIndex index de l'image appartenant au block qu'on étudie
      */
-    public void setChoosenBodyBlock(int bodyBlockIndex) {
+    public void setChoosenBodyBlock(int imageIndex) {
         
+        DicomImage dcm = dicomImages.get(imageIndex);
+        
+        //On a parcourt les coupes pour trouver celle qui correspond à l'image
+        // sélectionnée
+        for (BodyBlock bb : bodyBlocks) {
+            if (bb.contains(dcm))
+                this.choosenBodyBlock = bb;
+        }
         //On vide la liste et on garde uniquement celle sélectionnée
-        this.choosenBodyBlock = this.bodyBlocks.get(bodyBlockIndex);
+        
         this.bodyBlocks.clear();
         this.bodyBlocks.add(this.choosenBodyBlock);
         
@@ -486,4 +499,35 @@ public class TAPSerie implements Serie{
     public BufferedImage[] getStartTEPSerieSummAll() {
         return this.startTEPSerie.getSummALL();
     }
+    
+    public BufferedImage[] getAllImages() {
+        BufferedImage[] buffs = new BufferedImage[dicomImages.size()];
+        
+        for (int i = 0; i < buffs.length; i++) {
+            buffs[i] = dicomImages.get(i).getBufferedImage();  
+        }
+        
+        return buffs;
+    }
+
+    @Override
+    public String getSeriePath() {
+        return this.directoryPath;
+    }
+
+        @Override
+    public int getPatientWeight() {
+        return Integer.parseInt(weight); 
+    }
+    
+    /**
+     * Retourne la taille du patient en <b>cm</b> 
+     */
+        @Override
+    public int getPatientHeight() {
+        
+        DicomImage dcm = this.dicomImages.get(0);
+        return Integer.parseInt(dcm.getAttribute(TagFromName.PatientSize))/100;
+    }
+    
 }

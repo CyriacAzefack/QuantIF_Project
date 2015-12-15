@@ -31,11 +31,19 @@ public abstract class Block {
     
     /**
      * Renvoie l'image dicom situé à cette indice
-     * @param dicomIndex indice de l'image dicom
+     * @param dicomIndex indice de l'image DICOM
+     * @return 
      * @throws QuantIF_Project.patient.exceptions.BadParametersException 
      *      Levée si l'indice est invalide
      * 
      *  
      */
     public abstract DicomImage getDicomImage(int dicomIndex) throws BadParametersException;
+    
+    /**
+     * Retourne l'heure d'acquisition de ce block
+     * @return 
+     * 
+     */
+    public abstract String getAcquisitionTime();
 }

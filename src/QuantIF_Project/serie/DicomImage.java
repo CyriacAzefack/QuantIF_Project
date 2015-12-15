@@ -14,7 +14,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
+import ij.util.DicomTools;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +43,7 @@ public final class DicomImage implements Comparable<DicomImage> {
         /**
          * Image 
          */
-        public ImagePlus imgPlus;
+        private ImagePlus imgPlus;
         /**
          * Index de la coupe temporelle dans laquelle se trouve l'image
          */
@@ -52,7 +52,7 @@ public final class DicomImage implements Comparable<DicomImage> {
         /**
          * Index de l'image dans la coupe temporelle dans laquelle elle se trouve
          */
-	private int slice;
+	private int stackIndex;
         
         private SourceImage displayImage;
         
@@ -81,7 +81,7 @@ public final class DicomImage implements Comparable<DicomImage> {
          
            
             this.timeSlice = 0;
-            this.slice = 0;
+            this.stackIndex = 0;
             
 	}
 	
@@ -100,7 +100,7 @@ public final class DicomImage implements Comparable<DicomImage> {
         public DicomImage(File file, int timeSlice, int slice) throws DicomException, IOException {
             this(file);
             this.timeSlice = timeSlice;
-            this.slice = slice;
+            this.stackIndex = slice;
         }
         
        
@@ -118,10 +118,21 @@ public final class DicomImage implements Comparable<DicomImage> {
          * @return la valeur du tag 
          */
 	public String getAttribute (AttributeTag attrTag) {
-            String str = Attribute.getSingleStringValueOrEmptyString(this.attributeList, attrTag);
-            if (str.isEmpty())
-                str = "0";
-            return str;
+            String tagStr = Integer.toHexString(attrTag.getGroup()) + "," + Integer.toHexString(attrTag.getElement());
+            String str = Attribute.getDelimitedStringValuesOrEmptyString(attributeList, attrTag);
+            
+            //On essaye la deuxième méthode
+            if (str.isEmpty()) {
+                str = DicomTools.getTag(imgPlus, tagStr);
+            }
+            
+            if (str != null) {
+                str = str.trim();
+                if (!str.isEmpty())
+                    return str;
+            }
+            return "0";
+            
 	}
 	
 	
@@ -170,11 +181,18 @@ public final class DicomImage implements Comparable<DicomImage> {
         return this.timeSlice;
     }
     
-    
-    public int getSlice() {
-        return this.slice;
+    /**
+     * Index de l'image dans la coupe temporelle
+     * @return 
+     */
+    public int getStackIndex() {
+        return this.stackIndex;
     }
     
+    /**
+     * Retourne l'ensemble des méta-données du fichier DICOM
+     * 
+     */
     public AttributeList getAttributeList() {
         return this.attributeList;
     }

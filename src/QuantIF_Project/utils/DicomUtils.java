@@ -9,8 +9,12 @@ import QuantIF_Project.serie.TEPSerie;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.DicomFilesNotFoundException;
 import QuantIF_Project.patient.exceptions.NotDirectoryException;
+import QuantIF_Project.serie.TimeFrame;
+import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.DicomFileUtilities;
+import com.pixelmed.dicom.OtherFloatAttribute;
+import com.pixelmed.dicom.TagFromName;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -187,78 +191,152 @@ public class DicomUtils {
      */
     
     public static Date dicomDateToDate(String dicomDate) {
-        //Exemple de String : "20150914 082153.484000"
-        //format : yyyyMMdd hhmmss.frac
-        Date date = null;
-        DateFormat df = new SimpleDateFormat("yyyyMMdd HHmmss");
-        //DateFormat newdf = new SimpleDateFormat("HH:mm:ss");
-        try {
-            date = df.parse(dicomDate.substring(0, 15));
-            
+         Date date = null;
+    
+        if (dicomDate.length() > 13) {
+            //Exemple de String : "20150914 082153.484000"
+            //format : yyyyMMdd hhmmss.frac
 
-            
-        } catch (ParseException ex) {
-            Logger.getLogger(DicomUtils.class.getName()).log(Level.SEVERE, null, ex);
+            DateFormat df = new SimpleDateFormat("yyyyMMdd HHmmss");
+            //DateFormat newdf = new SimpleDateFormat("HH:mm:ss");
+            try {
+                date = df.parse(dicomDate.substring(0, 15));
+
+
+
+            } catch (ParseException ex) {
+                Logger.getLogger(DicomUtils.class.getName()).log(Level.SEVERE, null, ex);
+            }
+           
         }
-        //System.out.println("Early : " + earlyDate);
-        //System.out.println("Late : " + lateDate);
+        else {
+             //Exemple de String : "082153.484000"
+            //format : hhmmss.frac
+
+            DateFormat df = new SimpleDateFormat("HHmmss");
+            //DateFormat newdf = new SimpleDateFormat("HH:mm:ss");
+            try {
+                date = df.parse(dicomDate.substring(0, 6));
+
+
+
+            } catch (ParseException ex) {
+                Logger.getLogger(DicomUtils.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         return date;
     }
     
     /**
-	 * Parcourt le repertoire de fichiers et cree les instances de DicomImage
-	 * �à l'aide des fichier DICOM et les range dans l'ordre croissant des index des images
-         * 
-	 * @param path Chemin du dossier DICOM
-	 * @return Une ArrayList de DicomImage : la liste des fichiers 'DICOM' image liés au patient
-	 * @throws NotDirectoryException 
-	 * 		Levée quand le chemin fourni ne correspond pas � un repertoire
-	 * @throws DicomFilesNotFoundException
-	 * 		Levée quand aucun fichier DICOM n'a été� trouvé�dans le répertoire
-	 */
-	
-	public static ArrayList<DicomImage> checkDicomImages(String path) throws NotDirectoryException, DicomFilesNotFoundException {
-		ArrayList<DicomImage> listDI = new ArrayList<>();
-		File dir = new File(path);
-		if (!dir.isDirectory()) {
-			throw new NotDirectoryException("Le chemin '" + path + "' n'est pas un répertoire");
-		}
-		File[] files = dir.listFiles();
-	        
-		//On parcourt le dossier de fichiers
-		if (files != null) {
-                  
-                    for (File file : files) {
-                        
-                        if (file.isFile()) {
-                            // Si c'est un fichier on vérifie si c'est un fichier DICOM
-                            
-                            if (DicomUtils.isADicomFile(file)) {
-                                try {
-                                    
-                                    DicomImage dcm = new DicomImage(file);
-                                    listDI.add(dcm);
-                                   
-                                    
-                                       
-                                } catch (DicomException | IOException ex) {
-                                    Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
-                                }
-                            }
-                        }
-                    }
-                   
-		}
+    * Parcourt le repertoire de fichiers et cree les instances de DicomImage
+    * �à l'aide des fichier DICOM et les range dans l'ordre croissant des index des images
+    * 
+    * @param path Chemin du dossier DICOM
+    * @return Une ArrayList de DicomImage : la liste des fichiers 'DICOM' image liés au patient
+    * @throws NotDirectoryException 
+    * 		Levée quand le chemin fourni ne correspond pas � un repertoire
+    * @throws DicomFilesNotFoundException
+    * 		Levée quand aucun fichier DICOM n'a été� trouvé�dans le répertoire
+    */
+
+   public static ArrayList<DicomImage> checkDicomImages(String path) throws NotDirectoryException, DicomFilesNotFoundException {
+       ArrayList<DicomImage> listDI = new ArrayList<>();
+       File dir = new File(path);
+       if (!dir.isDirectory()) {
+               throw new NotDirectoryException("Le chemin '" + path + "' n'est pas un répertoire");
+       }
+       File[] files = dir.listFiles();
+
+       //On parcourt le dossier de fichiers
+       if (files != null) {
+
+           for (File file : files) {
+
+               if (file.isFile()) {
+                   // Si c'est un fichier on vérifie si c'est un fichier DICOM
+
+                   if (DicomUtils.isADicomFile(file)) {
+                       try {
+
+                           DicomImage dcm = new DicomImage(file);
+                           listDI.add(dcm);
+
+
+
+                       } catch (DicomException | IOException ex) {
+                           Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
+                       }
+                   }
+               }
+           }
+
+       }
+
+
+        //On vérifie si la liste n'est pas vide
+        if (listDI.isEmpty()) {
+                throw new DicomFilesNotFoundException("Aucun fichier DICOM n'a été trouvé dans ce repertoire");
+        }
+        //On range  les dicomImages
+        Collections.sort(listDI);
+
+        System.out.println(listDI.size() + " images DICOM détectées!!");
+        
+        return listDI;
+   }
+   
+   /**
+    * Crée une série TEP d'une seule frame contenant la somme de toutes les frames
+    * de cette série TEP.
+    * 
+    * @param serie Série TEP
+    * @param dirPath Chemin du répertoire dans lequel sera sauvé la nouvelle série TEP
+    */
+   public static void createStaticTEPSerie(TEPSerie serie, String dirPath) {
+        try {
+            AttributeList list;
+            TimeFrame tf;
+            DicomImage dcm ;
+            OtherFloatAttribute ofa = new OtherFloatAttribute(TagFromName.PixelData);
+           
+            String filePath;
+            String transferSyntaxUID = "1.2.840.10008.1.2"; //Implicit VR Endian: Default Transfer Syntax for DICOM
+            BufferedImage[] buffSumm = serie.getSummALL();
+            
+            //On vide le dossier de sortie
+            DicomUtils.emptyDirectory(new File(dirPath));
+            
+            //On crée un sous repertoire
+           
+            
+            //On récupére la frame pr les méta données
+            tf = serie.getBlock(1);
+            
+            for (int imageIndex = 0; imageIndex < tf.size(); imageIndex++) {
+                dcm = tf.getDicomImage(imageIndex);
                
-		
-		//On vérifie si la liste n'est pas vide
-		if (listDI.isEmpty()) {
-			throw new DicomFilesNotFoundException("Aucun fichier DICOM n'a été trouvé dans ce repertoire");
-		}
-		//On range  les dicomImages
-		Collections.sort(listDI);
-                
-                System.out.println(listDI.size() + " images DICOM détectées!!");
-		return listDI;
-	}    
+                if (dcm != null) {
+                    BufferedImage b = buffSumm[imageIndex];
+                    File f = new File(dirPath + "\\IM."+(imageIndex+1));
+
+
+                    list = dcm.getAttributeList();
+
+                    //On remplace le nombre de time frame dans l'entete des nouveaus images dicom
+                    list.replaceWithValueIfPresent(TagFromName.NumberOfTimeSlices, Integer.toString(0));
+
+                   
+
+                   
+                    ofa.setValues((float[]) dcm.getImageProcessor().getPixels());
+                    list.replace(TagFromName.PixelData, ofa);
+                    list.write(f, transferSyntaxUID, false, true);
+
+                }
+            }
+        } catch (BadParametersException | DicomException | IOException ex) {
+            Logger.getLogger(DicomUtils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+   }
+   
 }

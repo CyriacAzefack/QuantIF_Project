@@ -104,8 +104,11 @@
         </Menu>
         <Menu class="javax.swing.JMenu" name="jMenu2">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Quantification"/>
+            <Property name="text" type="java.lang.String" value="M&#xe9;thodes de quantification"/>
           </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMenu2ActionPerformed"/>
+          </Events>
           <SubComponents>
             <MenuItem class="javax.swing.JMenuItem" name="patlakQuantMethod">
               <Properties>
@@ -119,6 +122,17 @@
               <Properties>
                 <Property name="text" type="java.lang.String" value="Hunter"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="hunterQuantMethodActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="barbQuantMethod">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Barbolosi"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="barbQuantMethodActionPerformed"/>
+              </Events>
             </MenuItem>
           </SubComponents>
         </Menu>

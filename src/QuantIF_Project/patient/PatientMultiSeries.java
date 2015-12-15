@@ -14,11 +14,13 @@ import QuantIF_Project.serie.Serie;
 import QuantIF_Project.serie.TAPSerie;
 import com.pixelmed.dicom.TagFromName;
 import ij.gui.Roi;
+import ij.io.RoiDecoder;
 import ij.measure.ResultsTable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 /**
  *Contient la série dynamique de départ, la série statique au milieu et la série dynamique de fin
@@ -74,7 +76,7 @@ public class PatientMultiSeries {
         
         this.endTEPSerie = endDynSerie;
         
-        setParents();
+        setParent();
         
         this.tagsToCheck = new String [3];
        
@@ -133,11 +135,19 @@ public class PatientMultiSeries {
         addResults(this.startTEPSerie.getAortaResults());
         System.out.println("Résultats de la série dynamique 1 ajoutées...");
         
-        //On fait les calculs pour la série TAP
-        this.staticTAPSerie.selectAorta(roi, 0, 0);
-        //On ajoute les résultats pour la série statique TAP
-        addResults(this.staticTAPSerie.getAortaResults());
-        System.out.println("Résultats de la série statique ajoutées...");
+        //On demande à l'utilisateur s'il veut inclure la série TAP dans le tracé
+        // de la courbe artérielle
+        
+        int dialogResult = JOptionPane.showConfirmDialog(null, "Utiliser la série TAP pour le tracé de Cb(t)?","Warning", JOptionPane.YES_NO_OPTION);
+        
+        if (dialogResult == JOptionPane.YES_OPTION) {
+            //On fait les calculs pour la série TAP
+            this.staticTAPSerie.selectAorta(roi, 0, 0);
+            //On ajoute les résultats pour la série statique TAP
+            addResults(this.staticTAPSerie.getAortaResults());
+            System.out.println("Résultats de la série statique ajoutées...");
+        }
+        
         
         //On fait les calculs pour la série TEP de fin
         this.endTEPSerie.selectAorta(roi, 0, this.endTEPSerie.getNbBlocks() - 1 );
@@ -147,9 +157,13 @@ public class PatientMultiSeries {
         
         //On affiche l'ensemble des résultats
         this.aortaResults.display(this.startTEPSerie.getPixelUnity());
+        
+        
+        this.aortaResults.save("tmp\\aortaResults");
+        System.out.println("Résultats d'aortes sauvegardées dans \"tmp\\aortaResults\"");
     }
 
-    private void setParents() {
+    private void setParent() {
         startTEPSerie.setParent(this);
         staticTAPSerie.setParent(this);
         endTEPSerie.setParent(this);
@@ -232,9 +246,11 @@ public class PatientMultiSeries {
     }
     
     public void loadAortaResult(String path) {
-        ResultsTable rt = ResultsTable.open2(path);
+        ResultsTable rt = ResultsTable.open2(path+"\\resultsTable");
+        Roi roi = RoiDecoder.open(path+"\\roi");
         
-        this.aortaResults.loadResultsTable(rt);
+        this.aortaResults.loadResultsTable(rt, roi);
+        
     }
     
     public AortaResults getAortaResults() {

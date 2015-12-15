@@ -6,6 +6,7 @@ package QuantIF_Project.patient;
 
 import QuantIF_Project.utils.Curve;
 import ij.gui.Roi;
+import ij.io.RoiEncoder;
 import ij.measure.ResultsTable;
 import org.jfree.ui.RefineryUtilities;
 
@@ -131,13 +132,28 @@ public class AortaResults {
     
     /**
      * Charge et affiche des résultats d'aorte
-     * @param rt 
+     * @param rt ResultTable
+     * @param roi roi
      */
-    public void loadResultsTable(ResultsTable rt) {
+    public void loadResultsTable(ResultsTable rt, Roi roi) {
         this.setResultsTable(rt);
-        
+        this.setRoi(roi);
         //Affichage des résultats chargés
         this.display(title);
+    }
+    
+    /**
+     * Sauvegarde les données dans un dossier
+     * @param path chemin du dossier
+     */
+    public void save(String path) {
+        //On sauvegarde les ResultsTable
+        this.resultTable.save(path+"\\resultsTable");
+        
+        //On sauvegarde la ROI
+        RoiEncoder.save(roi, path+"\\roi");
+        
+        
     }
     
     

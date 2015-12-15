@@ -66,5 +66,23 @@ public class BodyBlock extends Block{
      */
     public double getEndTime() {
         return this.endTime;
+        
     }
+    
+    /**
+     * Renvoie vrai si cette coupe corporelle contient cette iamge
+     * @param dcm image dont la présence est à tester
+     * @return 
+     */
+    public boolean contains(DicomImage dcm) {
+        return this.dicomImages.contains(dcm);
+    }
+
+    @Override
+    public String getAcquisitionTime() {
+        DicomImage dcm = this.dicomImages.get(0);
+        return dcm.getAttribute(TagFromName.AcquisitionTime);
+    }
+    
+    
 }

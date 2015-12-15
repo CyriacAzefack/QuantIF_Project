@@ -1,5 +1,11 @@
 1- Fixer les fenêtres de selection d'aorte dans la frame principale
 
-2- Sauvegarder/charger les données de sélection d'aorte (ROI + Résultats)
+2- Sauvegarder/charger les données de sélection d'aorte (ROI + Résultats) (FAIT)
 
-3- Sauvegarder résultats Images Ki
+3- Sauvegarder résultats Images Ki (FAIT)
+
+4- Afficher tout le TAP (selectionner une coupe) (FAIT)
+
+5- Selection Aorte pour la TAP y/n (fit ds ts les cas). Utiliser le fit pour l'aire sous la courbe (FAIT)
+
+6- Hunter

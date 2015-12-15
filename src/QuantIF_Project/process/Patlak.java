@@ -10,12 +10,16 @@ import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.Serie;
+import QuantIF_Project.utils.DicomUtils;
 import QuantIF_Project.utils.MathUtils;
+import ij.IJ;
+import ij.ImagePlus;
 import ij.ImageStack;
 import ij.measure.CurveFitter;
 import ij.measure.ResultsTable;
 import ij.process.FloatProcessor;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,12 +54,12 @@ public class Patlak {
     private int nbTimePoints;
     
     /**
-     * Valeurs des time Points
+     * Valeurs des time Points en minutes
      */
     private double[] timeArray;
     
     /**
-     * Ensemble des premières images patient pour chaque timePoint
+     * Images des différentes série
      */
     private final FloatProcessor[][] patientImages;
     
@@ -71,34 +75,34 @@ public class Patlak {
     
     private final FloatProcessor[] kiImages;
     
+    private static final double CB_MIN =  1E-10;
+    
    
     
     
     
     /**
-     * On applique la méthode de Patlak sur cette acquisition patient
-     * @param  patient PatientMultiSeries
+     * On applique la méthode de Patlak sur cette acquisition patient.
+     * Les résultats de selection d'aorte utilisées sont celles les plus récentes 
+     * situées dans le repertoire <b>tmp/aortaResults</b>
+     * @param  patientMultiSeries PatientMultiSeries
      * 
      */
-    public Patlak(PatientMultiSeries patient) {
+    public Patlak(PatientMultiSeries patientMultiSeries) {
         
-        String aortaResultsPath = "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\AortaResults\\aortaResults1.xls";
-        patient.loadAortaResult(aortaResultsPath);
+        String aortaResultsPath = "tmp\\aortaResults";
+        ResultsTable rt = ResultsTable.open2(aortaResultsPath+"\\resultsTable");
+        patientMultiSeries.loadAortaResult(aortaResultsPath);
         this.series = new Serie[3];
-        series[0] = patient.getStartDynSerie();
-        series[1] = patient.getStaticSerie();
-        series[2] = patient.getEndDynSerie();
-        
-        /*
-        for (Serie s : series) {
-            nbTimePoints += s.getNbBlocks();
-        }
-        */
-        
-        nbTimePoints = 7;
+        series[0] = patientMultiSeries.getStartDynSerie();
+        series[1] = patientMultiSeries.getStaticSerie();
+        series[2] = patientMultiSeries.getEndDynSerie();
         
         
-        //stackSize = 1;
+        //Nombres de points placées sur Cb(t)
+        nbTimePoints = rt.size();
+        
+        
         
         
         try {
@@ -119,7 +123,7 @@ public class Patlak {
         
         //On les remplit à l'aide des résultats lié à la segmentation de l'aorte
         
-        setBloodConcentrations(patient.getAortaResults());
+        setBloodConcentrations(patientMultiSeries.getAortaResults());
         
         setAreaUnderCurve();
         
@@ -141,36 +145,61 @@ public class Patlak {
         for (int stackIndex = 0; stackIndex < stackSize; stackIndex ++) 
             patientImages[stackIndex] = getPatientImages(stackIndex);
         
+        // On calcule l'image des Ki pour chaque coupe spaciale
         for (int stackIndex = 0; stackIndex < stackSize; stackIndex ++) 
             kiImages[stackIndex] = buidKiImage(stackIndex);
         
-        displayKiImages();
+        displayAndSaveKiImages();
         
     }
     
     /**
-     * Renvoie le tableau de concentrations sanguines
+     * Renvoie le tableau de concentrations sanguines après le fit.
+     * On fait le fit sur la série dynamique de départ (plus la série statique si présente) 
+     * et on garde les valeurs de la série dynamique de fin
      * @param aortaResults résultats d'aorte de la multi-acquisition
      * @return {double[]} tableau de concentrations sanguines
      */
     private void setBloodConcentrations(AortaResults aortaResults) {
-        System.out.println("On récupère les valeurs de concentrations sanguine");
-        
-        ResultsTable rt = aortaResults.getResultsTable();
-        
-        Cb = rt.getColumnAsDoubles(1); //On recupere la VALEUR MOYENNE
-        timeArray = rt.getColumnAsDoubles(5); //On récupère le valeur MID TIME;
-        //On passe les temps en minute
-        for (int i = 0; i < timeArray.length; i++) {
-            timeArray[i] /= 60;
+        try {
+           
+            
+            ResultsTable rt = aortaResults.getResultsTable();
+            
+            Cb = rt.getColumnAsDoubles(1); //On recupere la VALEUR MOYENNE
+            timeArray = rt.getColumnAsDoubles(5); //On récupère le valeur MID TIME;
+            //On passe les temps en minute
+            for (int i = 0; i < timeArray.length; i++) {
+                timeArray[i] /= 60;
+            }
+            
+            //ON FAIT LE FIT sur la premiere série dynamique de debut (et la série TAP
+            // si elle est présente) et on garde les valeurs de départ pour la série dynamique
+            // de fin
+            
+            double[] CbfirstDyn = Arrays.copyOfRange(Cb, 0,  Cb.length-series[2].getNbBlocks());
+            double[] timeArrayfirstDyn = Arrays.copyOfRange(timeArray, 0, Cb.length- series[2].getNbBlocks());
+            
+            CbfirstDyn = MathUtils.arterialFit(timeArrayfirstDyn, CbfirstDyn);
+            System.arraycopy(CbfirstDyn, 0, Cb, 0, CbfirstDyn.length); 
+            
+            
+            //Cb = MathUtils.arterialFit(timeArray, Cb);
+            //rt.show("Aorta results");
+            //On remplace les zéros par des valeurs infinitésimales
+            
+            /*
+            for (int i = 0 ; i<Cb.length; i++) {
+            if (Cb[i] < CB_MIN)
+                Cb[i] = CB_MIN;
+            }
+            */
+            
+        } catch (BadParametersException ex) {
+            Logger.getLogger(Patlak.class.getName()).log(Level.SEVERE, null, ex);
         }
-        //rt.show("Aorta results");
         
-        //On remplace les zéros par des valeurs infinitésimales
-        for (int i = 0 ; i<Cb.length; i++) {
-            if (Cb[i] == 0)
-                Cb[i] = Double.MIN_VALUE;
-        }
+         System.out.println("On récupère les valeurs de concentrations sanguine");
        
     }
     
@@ -179,7 +208,7 @@ public class Patlak {
      */
     private void setAreaUnderCurve() {
         
-        System.out.println("On récupère les aires sous la courbe");
+       
         
         for (int timeIndex = 0; timeIndex < nbTimePoints; timeIndex++) {
             double[] xVals = Arrays.copyOfRange(timeArray, 0, timeIndex+1);
@@ -192,13 +221,7 @@ public class Patlak {
             }
         }
         
-        /*
-        for (int i = 0; i < AUC.length; i++) {
-            if (AUC[i] == 0)
-                AUC[i] = Double.MIN_VALUE;
-            
-        }
-        */
+        System.out.println("On récupère les aires sous la courbe");
     }
     
     /**
@@ -238,7 +261,7 @@ public class Patlak {
                 //Pour chaque valeur de timeIndex, on calcule les coordonées {FDG(t)/Cb(t), AUC(t)/Cb(t)}
                 for (int timeIndex = 0; timeIndex < nbTimePoints; timeIndex++) {
                     double fdg = patientImages[stackIndex][timeIndex].getPixelValue(x, y);
-                   
+                    //System.out.println(timeIndex);
                     yArray[timeIndex] = fdg/Cb[timeIndex];
                     xArray[timeIndex] = AUC[timeIndex]/Cb[timeIndex];
                     //System.out.println("X : " + xArray[timeIndex] + "\nY : " + yArray[timeIndex]);
@@ -247,6 +270,7 @@ public class Patlak {
                 
                 
                 //On fait une régression linéaire sur ces valeurs
+                
                 CurveFitter linRegr = new CurveFitter(xArray, yArray);
                 linRegr.doFit(CurveFitter.STRAIGHT_LINE);
                 
@@ -255,27 +279,23 @@ public class Patlak {
                 kiArray[y*width + x] = (float) linRegr.getParams()[1];
                 vbArray[y*width + x] = (float) linRegr.getParams()[0];
                 
-                if ((kiArray[y*width + x] == Double.POSITIVE_INFINITY)) {
-                    nbErrors++;
-                    /*
-                    Curve c = new Curve("Linear Regression" , "Linear Regression", "AUC(t)/Cb(t)", "FDG(t)/Cb(t)", xArray, yArray);
-                    c.setVisible( true );
-                    //On place la courbe au centre de l'écran
-                    RefineryUtilities.centerFrameOnScreen(c);
-                    System.out.println("yArray : " + Arrays.toString(yArray));
-                    */
-                    
-                }
-                
+               
                 /*
-                if (x==84 && y==84) {
-                    Curve c = new Curve("Linear Regression" , "R2 = " + linRegr.getRSquared(), "AUC(t)/Cb(t)", "FDG(t)/Cb(t)", xArray, yArray);
+                if (x==102 && y==78 && stackIndex >= 45 && stackIndex <= 50) {
+                    Curve c = new Curve("Linear Regression" , "R2 = " + linRegr.getRSquared() 
+                            + " & stackIndex ="+ stackIndex, "AUC(t)/Cb(t)", 
+                            "FDG(t)/Cb(t)", xArray, yArray);
+                    double[] droite = new double[xArray.length];
+                    for (int i = 0; i < xArray.length; i++) {
+                        droite[i] = linRegr.f(xArray[i]);
+                    }
+                    c.addData(xArray, droite, "droite");
                     c.setVisible( true );
                     //On place la courbe au centre de l'écran
                     RefineryUtilities.centerFrameOnScreen(c);
                     System.out.println(linRegr.getResultString());
                 }
-                */
+                
                 /*
                 if (vbArray[y*width + x] == 0) {
                     System.out.println("Vb max val");
@@ -289,6 +309,7 @@ public class Patlak {
                 */
             }
         }
+        
         /*
         System.out.println("****************************");
         System.out.println("Nombre d'erreurs : " + nbErrors);
@@ -348,16 +369,35 @@ public class Patlak {
         */
         return imagesProc;
     }
-
-    private void displayKiImages() {
+    
+    /**
+     * On sauvegarde et on affiche les images des Ki
+     */
+    private void displayAndSaveKiImages() {
+        String dirPath = "tmp\\imagesKi";
+        File file = new File(dirPath);
+        //On vide le dossier
+        DicomUtils.emptyDirectory(file);
+        ImagePlus imp;
         ImageStack is = new ImageStack(width, height);
         BufferedImage[] buffs = new BufferedImage[kiImages.length];
         for (int i = 0; i < buffs.length; i++) {
             buffs[i] = kiImages[i].getBufferedImage();
             is.addSlice(kiImages[i]);
+            imp = new ImagePlus("image "+i, kiImages[i]);
+            //On sauvegarde les images ki
+            IJ.save(imp, file.getAbsolutePath()+"\\IM"+i);
         }
         
+        System.out.println("Images des Ki sauvegardées dans le dossier \"" 
+                + file.getAbsolutePath() + "\"");
         
        PatientSerieViewer.setDisplayedImage(buffs, "Ki Images");
+       
+      
+      
+       
     }
+
+    
 }

@@ -96,7 +96,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     /**
      * Nombre de coupes temporelle
      */
-    private int nbTimeSlices;
+    private int nbBlocks;
     
     /**
      * Unité de la valeur du pixel
@@ -164,8 +164,6 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         acquisitionTimeTextField = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
         sliderMax = new javax.swing.JSlider();
-        labelSliceList = new javax.swing.JLabel();
-        frameList = new javax.swing.JComboBox();
         sliderMin = new javax.swing.JSlider();
         jLabel7 = new javax.swing.JLabel();
         tridimObsButton = new javax.swing.JButton();
@@ -218,6 +216,8 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 670, 550, 50));
 
         imageIDTextField.setEditable(false);
+        imageIDTextField.setBackground(new java.awt.Color(204, 255, 255));
+        imageIDTextField.setFont(new java.awt.Font("sansserif", 1, 14)); // NOI18N
         imageIDTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         imageIDTextField.setText("               ");
         imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
@@ -225,7 +225,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 imageIDTextFieldActionPerformed(evt);
             }
         });
-        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 610, 60, 28));
+        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 610, 100, 40));
 
         tapImageLabel.setMaximumSize(new java.awt.Dimension(700, 700));
         tapImageLabel.setMinimumSize(new java.awt.Dimension(512, 512));
@@ -270,18 +270,6 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         });
         getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 10, 400, 50));
 
-        labelSliceList.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        labelSliceList.setText("Coupe corporelle");
-        getContentPane().add(labelSliceList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 180, 250, 50));
-
-        frameList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        frameList.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                frameListActionPerformed(evt);
-            }
-        });
-        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1280, 180, 150, 40));
-
         sliderMin.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         sliderMin.setMaximum(100000);
         sliderMin.setSnapToTicks(true);
@@ -313,7 +301,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 chooseBodyBlockButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(chooseBodyBlockButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 290, 280, 80));
+        getContentPane().add(chooseBodyBlockButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 150, 280, 80));
 
         prevTEPSerieButton.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
         prevTEPSerieButton.setText("<html>Prévisualisation série TEP de départ </html>");
@@ -370,26 +358,6 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         display(this.currentImageID);
     }//GEN-LAST:event_sliderMaxStateChanged
 
-    private void frameListActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_frameListActionPerformed
-        try {
-            if (this.frameList.getSelectedIndex() >= 0) {
-                int frameIndex = this.frameList.getSelectedIndex();
-                this.displayedImages = getImagesToDisplay(frameIndex);
-                this.imagesPerBlock = this.displayedImages.length;
-                imageSlider.setMaximum(imagesPerBlock);
-                display(this.currentImageID);
-
-                //On affiche l'acquisition time
-                //this.acquisitionTimeTextField.setText("" + patient.getBlock(frameIndex).getMidTime());
-                //this.tridimObsButtonActionPerformed(evt);
-            }
-            
-        } catch (BadParametersException ex) {
-            Logger.getLogger(TAPSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-       
-    }//GEN-LAST:event_frameListActionPerformed
-
     private void tapImageLabelMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_tapImageLabelMouseWheelMoved
         // TODO add your handling code here:
     }//GEN-LAST:event_tapImageLabelMouseWheelMoved
@@ -445,7 +413,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_tridimObsButtonActionPerformed
 
     private void chooseBodyBlockButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chooseBodyBlockButtonActionPerformed
-        this.tapSerie.setChoosenBodyBlock(this.frameList.getSelectedIndex());
+        this.tapSerie.setChoosenBodyBlock(this.currentImageID);
         
         this.dispose();
         
@@ -455,20 +423,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_chooseBodyBlockButtonActionPerformed
 
     private void prevTEPSerieButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_prevTEPSerieButtonActionPerformed
-        if(this.prevTEPSerieButton.isSelected()) {
-            this.displayedImages = this.tapSerie.getStartTEPSerieSummAll();
-        }
-        else {
-            try {
-                this.displayedImages = getImagesToDisplay(this.frameList.getSelectedIndex());
-                
-            } catch (BadParametersException ex) {
-                Logger.getLogger(TAPSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        if (this.currentImageID > this.displayedImages.length)
-            this.currentImageID = 0;
-        display(this.currentImageID);
+       
     }//GEN-LAST:event_prevTEPSerieButtonActionPerformed
     
     /**
@@ -560,25 +515,9 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
      * @param sliceIndex index de la coupe temporelle
      * @return 
      */
-    private BufferedImage[] getImagesToDisplay (int sliceIndex) throws BadParametersException {
-        if (sliceIndex > this.nbTimeSlices)
-            throw new BadParametersException("L'indice de la coupe temporelle fournie n'est pas accessible");
-        
-        Block block = this.tapSerie.getBlock(sliceIndex);
-        BufferedImage[] buffs = new BufferedImage[block.size()];
-        for (int frame = 0; frame < block.size(); frame++) {
-            DicomImage dcm = block.getDicomImage(frame);
-            if (dcm == null) {
-                BufferedImage b= new BufferedImage(tapSerie.getWidth(), tapSerie.getHeight(), BufferedImage.TYPE_INT_RGB);
-                buffs[frame] = b;
-            }
-            else {
-                buffs[frame] = dcm.getBufferedImage();
-            }
-            
-        }
-        
-        return buffs;
+    private BufferedImage[] getImagesToDisplay ()  {
+               
+        return tapSerie.getAllImages();
     }
     
   
@@ -587,13 +526,11 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField acquisitionTimeTextField;
     private javax.swing.JButton chooseBodyBlockButton;
-    private javax.swing.JComboBox frameList;
     private javax.swing.JTextField imageIDTextField;
     private javax.swing.JSlider imageSlider;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel labelSliceList;
     private javax.swing.JFileChooser maskFileChooser;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;
@@ -645,14 +582,11 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         
         
         
-        this.imagesPerBlock = this.tapSerie.getNbImages(0);
-        this.nbTimeSlices = this.tapSerie.getNbBlocks();
         
-         try {
-            this.displayedImages = getImagesToDisplay(0);
-        } catch (BadParametersException ex) {
-            Logger.getLogger(TAPSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        this.nbBlocks = this.tapSerie.getNbBlocks();
+        
+        this.displayedImages = getImagesToDisplay();
+        this.imagesPerBlock = this.displayedImages.length;
         
          //Slider de luminosité
          //On sature le moins possible l'image au début
@@ -675,15 +609,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         
         
         
-       //frameList settings
-            //On ajoute toutes les frames
-        if (this.tapSerie instanceof TAPSerie) {
-            this.labelSliceList.setText("Coupe corporelle");
-        }
-        this.frameList.removeAllItems();
-       
-        for (int i=0; i<this.tapSerie.getNbBlocks(); i++) 
-            this.frameList.addItem("" + (i+1));
+      
             
             
         

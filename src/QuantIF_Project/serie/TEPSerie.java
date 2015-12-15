@@ -102,7 +102,7 @@ public class TEPSerie implements Serie{
         protected int height;
         
         /**
-         * Somme de toutes les frames de cette séri
+         * Somme de toutes les frames de cette série
          */
         private float[][] summALL;
 	
@@ -130,17 +130,22 @@ public class TEPSerie implements Serie{
          * Heure de début de la série
          */
         private String serieStartDate;
+        
+        /**
+         * Chemin du dossier où sont les images
+         */
+        private String directoryPath;
 	
         /**
-	 * On cree une instance de patient  l'aide du chemin vers le dossier où�
+	 * On cree une instance de patient  l'aide du chemin vers le dossier où
 	 * sont contenus tous les fichiers DICOM concernant le patient
 	 * @param dirPath chemin du repertoire où se trouve les fichiers DICOM
 	 * @throws NotDirectoryException 
-	 * 		Lev�e quand le chemin fourni ne correspond pas � un repertoire
+	 * 		Quand le chemin fourni ne correspond pas à un repertoire
 	 * @throws DicomFilesNotFoundException
-	 * 		Lev�e quand aucun fichier DICOM n'a �t� trouv� dans le r�pertoire
+	 * 		Quand aucun fichier DICOM n'a été trouv� dans le r�pertoire
 	 * @throws BadParametersException
-	 * 		Lev�e quand les param�tres d'entr�e sont invalides
+	 * 		Quand les paramètres d'entrée sont invalides
 	 */
 	public TEPSerie(String dirPath) throws NotDirectoryException, DicomFilesNotFoundException, BadParametersException {
 
@@ -151,7 +156,7 @@ public class TEPSerie implements Serie{
             this.nbTimeFrames = 0;
             this.nbImagesPerTimeFrame = 0;
 
-
+            this.directoryPath = dirPath;
             this.dicomImages = DicomUtils.checkDicomImages(dirPath);
 
             //On récupère les paramètres du patient sur le premier fichier
@@ -172,9 +177,9 @@ public class TEPSerie implements Serie{
 
             this.nbImagesPerTimeFrame = Integer.parseInt(dicomImages.get(0).getAttribute(TagFromName.NumberOfSlices));
             
-            this.width = Integer.parseInt(dicomImages.get(0).getAttribute(TagFromName.Columns));
+            this.width = dicomImages.get(0).getWidth();
             
-            this.height = Integer.parseInt(dicomImages.get(0).getAttribute(TagFromName.Rows));
+            this.height = dicomImages.get(0).getHeight();
             
             this.serieStartDate = dicomImages.get(0).getAttribute(TagFromName.StudyDate) + " " + dicomImages.get(0).getAttribute(TagFromName.StudyTime);
 
@@ -199,7 +204,7 @@ public class TEPSerie implements Serie{
             DicomUtils.emptyDirectory(new File(outputDirDyn2));
             DicomUtils.emptyDirectory(new File(outputDirStatic));
             try {
-                createSubDynAcquisition(outputDirDyn1, 2, 9);
+                createSubDynAcquisition(outputDirDyn1, 0, 7);
                 createSubDynAcquisition(outputDirDyn2, 27, 33);
                 createSubDynAcquisition(outputDirStatic, 20);
             } catch (DicomException | IOException ex) {
@@ -239,9 +244,9 @@ public class TEPSerie implements Serie{
         @Override
 	public TimeFrame getBlock(int index) throws BadParametersException {
             if (index < 0) 
-                    throw new BadParametersException("L'indice doit être supérieur ou égal à 0");
+                    throw new BadParametersException("["+ index + "] L'indice doit être supérieur ou égal à 0");
             if (index > this.timeFrames.size())
-                    throw new BadParametersException("Il n'y a pas de coupe temporelle à cet index. L'index est trop grand!");
+                    throw new BadParametersException("[" + index + "] Il n'y a pas de coupe temporelle à cet index. L'index est trop grand!");
 
             return this.timeFrames.get(index);
 	}
@@ -290,9 +295,9 @@ public class TEPSerie implements Serie{
             
             
             //On met à jour les valeurs de temps des différentes frames
-            for (TimeFrame tf : this.timeFrames) {
+            this.timeFrames.stream().forEach((tf) -> {
                 tf.setTime();
-            }
+            });
             
             System.out.println(this.timeFrames.size() + " Coupes détectées!!");
             this.nbTimeFrames = this.timeFrames.size();
@@ -301,12 +306,19 @@ public class TEPSerie implements Serie{
     
     
     
+        @Override
     public int getHeight(){
         return height;
     }
     
+        @Override
     public int getWidth() {
         return width;
+    }
+    
+    @Override
+    public String getSeriePath() {
+        return this.directoryPath;
     }
     
     /**
@@ -396,7 +408,7 @@ public class TEPSerie implements Serie{
         return this.nbTimeFrames;
     }
     
-        @Override
+    @Override
     public int getNbImages(int blockIndex) throws BadParametersException {
          if (blockIndex < 0 )
             throw new BadParametersException("L'indice de la frame doit être supérieur ou égal à 0.");
@@ -488,7 +500,7 @@ public class TEPSerie implements Serie{
      * @throws IOException
      * @throws DicomException 
      */
-    private void createSubDynAcquisition(String outputDir, int frameIndex) throws BadParametersException, IOException, DicomException {
+    private void createSubStaticAcquisition(String outputDir, int frameIndex) throws BadParametersException, IOException, DicomException {
         AttributeList list;
         TimeFrame tf = this.timeFrames.get(frameIndex);
         DicomImage dcm ;
@@ -845,6 +857,7 @@ public class TEPSerie implements Serie{
         return this.name;
     }
     
+        @Override
     public Date getSerieStartDate() {
         return DicomUtils.dicomDateToDate(this.serieStartDate);
     }
@@ -860,7 +873,79 @@ public class TEPSerie implements Serie{
         
         return buffs;
     }
-   
+    
+    /**
+     * Retourne la dose de FDG injectée dans le patient en <b>MBq</b>
+     * 
+     */
+    public double getPatientInjectedDose() {
+        double dose = 58;
+        try {
+            DicomImage dcm = this.timeFrames.get(0).getDicomImage(2);
+            dose = Double.parseDouble(dcm.getAttribute(TagFromName.RadionuclideTotalDose));
+        } catch (BadParametersException ex) {
+            Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return dose;
+                
+    }
+    
+    /**
+     * Retourne le poids du patient en <b>Kg</b>
+     *  
+     */
+        @Override
+    public int getPatientWeight() {
+        return Integer.parseInt(weight); 
+    }
+    
+    /**
+     * Retourne la taille du patient en <b>cm</b> 
+     */
+        @Override
+    public int getPatientHeight() {
+        
+        DicomImage dcm = this.dicomImages.get(0);
+        return Integer.parseInt(dcm.getAttribute(TagFromName.PatientSize))/100;
+        
+    }
+    
+    
+    
+    
+    /**
+     * Retourne <b>true</b> si c'est un homme et <b>false</b> sinon
+     * 
+     */
+    public boolean isAMale() {
+        return "M".equals(sex.trim());
+    }
+    
+    /**
+     * Retourne le temps de début de l'injection <br/>
+     * Valeur du tag SeriesTime (<b>hhmmss.frac</b>)
+     * @return 
+     */
+    public String getSeriesTime() {
+        DicomImage dcm = this.dicomImages.get(0);
+        return dcm.getAttribute(TagFromName.SeriesTime);
+        
+         
+    }
+    
+    /**
+     * 
+     * @return Le nombre d'images dans la première coupe temporelle
+     */
+    public int getNbImages() {
+        try {
+            return getNbImages(0);
+        } catch (BadParametersException ex) {
+            Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return 0;
+    }
 
    
 

@@ -44,6 +44,12 @@ public interface Serie {
     public String getPixelUnity();
     
     /**
+     * Retourne le chemin du dossier où sont les images
+     *  
+     */
+    public String getSeriePath();
+    
+    /**
      * 
      * @param index index du block
      * @return le block à cet index
@@ -56,6 +62,18 @@ public interface Serie {
      * Calcule et retourne les résultats liés à la ROI déssinnée
      */
     public AortaResults getAortaResults();
+    
+    /**
+     * 
+     * @return Le poids du patient en <b>Kg</b>
+     */
+    public int getPatientWeight();
+    
+    /**
+     * 
+     * @return La taille du patient en <b>cm</cm>
+     */
+    public int getPatientHeight();
     
     /**
      * Date de début d'acquisition de la série
