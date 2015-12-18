@@ -141,7 +141,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         currentImagePlus = new ImagePlus(currentImageTitle, ip);
         
         patient = p;
-        this.patientMultiSeries = null;
+        patientMultiSeries = null;
         
         this.radioButtonDyn1.setVisible(false);
         this.radioButtonStat.setVisible(false);
@@ -206,7 +206,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     
     public PatientSerieViewer(PatientMultiSeries pms) {
         this(pms.getStartDynSerie());
-        this.patientMultiSeries = pms;
+        patientMultiSeries = pms;
         //On gère les radioButton
             //On les rends visible
         this.radioButtonDyn1.setVisible(true);
@@ -237,14 +237,15 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     private void initComponents() {
 
         maskFileChooser = new javax.swing.JFileChooser();
+        popUpMenu = new javax.swing.JPopupMenu();
+        saveImages = new javax.swing.JMenuItem();
+        applyLUT = new javax.swing.JMenuItem();
         labelSliceList = new javax.swing.JLabel();
-        frameList = new javax.swing.JComboBox();
         summ1 = new javax.swing.JComboBox();
         summ2 = new javax.swing.JComboBox();
         jLabel8 = new javax.swing.JLabel();
         summButton = new javax.swing.JToggleButton();
         sliderMin = new javax.swing.JSlider();
-        jLabel7 = new javax.swing.JLabel();
         saveSummsButton = new javax.swing.JButton();
         radioButtonDyn2 = new javax.swing.JRadioButton();
         radioButtonDyn1 = new javax.swing.JRadioButton();
@@ -257,18 +258,30 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         imageIDTextField = new javax.swing.JTextField();
         acquisitionTimeTextField = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
         selectAorta = new javax.swing.JButton();
         tridimObsButton = new javax.swing.JButton();
+        frameList = new javax.swing.JComboBox();
         sliderMax = new javax.swing.JSlider();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
+        saveImages.setText("Sauvegarder les images");
+        saveImages.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveImagesActionPerformed(evt);
+            }
+        });
+        popUpMenu.add(saveImages);
+
+        applyLUT.setText("Appliquer une LUT");
+        popUpMenu.add(applyLUT);
+
         setBorder(null);
         setTitle("Patient Viewer");
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setFocusable(false);
+        setOpaque(false);
         setPreferredSize(new java.awt.Dimension(800, 800));
         try {
             setSelected(true);
@@ -278,29 +291,22 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         setVisible(true);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        labelSliceList.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
+        labelSliceList.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
         labelSliceList.setText("Coupe temporelle");
-        getContentPane().add(labelSliceList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 110, 140, 20));
-
-        frameList.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                frameListActionPerformed(evt);
-            }
-        });
-        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1210, 110, 110, 30));
+        getContentPane().add(labelSliceList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 180, 170, 20));
 
         summ1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 summ1ActionPerformed(evt);
             }
         });
-        getContentPane().add(summ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 190, -1, -1));
+        getContentPane().add(summ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1220, 230, -1, -1));
 
-        getContentPane().add(summ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(1340, 190, -1, -1));
+        getContentPane().add(summ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(1360, 230, -1, -1));
 
         jLabel8.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
         jLabel8.setText("à");
-        getContentPane().add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(1310, 190, 10, 20));
+        getContentPane().add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(1320, 230, 10, 20));
 
         summButton.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
         summButton.setText("Sommer");
@@ -309,20 +315,18 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 summButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(summButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1051, 183, 110, 40));
+        getContentPane().add(summButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 220, 110, 40));
 
         sliderMin.setMaximum(100000);
         sliderMin.setSnapToTicks(true);
+        sliderMin.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED), "Min", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("sansserif", 1, 12), java.awt.Color.blue)); // NOI18N
         sliderMin.setValueIsAdjusting(true);
         sliderMin.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 sliderMinStateChanged(evt);
             }
         });
-        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 40, 360, -1));
-
-        jLabel7.setText("Min");
-        getContentPane().add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 40, -1, -1));
+        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 79, 570, 60));
 
         saveSummsButton.setText("Sauvegarder toutes les images sommées");
         saveSummsButton.addActionListener(new java.awt.event.ActionListener() {
@@ -340,7 +344,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 radioButtonDyn2ActionPerformed(evt);
             }
         });
-        getContentPane().add(radioButtonDyn2, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 310, 250, 40));
+        getContentPane().add(radioButtonDyn2, new org.netbeans.lib.awtextra.AbsoluteConstraints(1070, 350, 250, 40));
 
         radioButtonDyn1.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
         radioButtonDyn1.setText("Serie Dynamique de départ");
@@ -355,7 +359,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 radioButtonDyn1ActionPerformed(evt);
             }
         });
-        getContentPane().add(radioButtonDyn1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 250, 270, 40));
+        getContentPane().add(radioButtonDyn1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1070, 290, 270, 40));
 
         radioButtonStat.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
         radioButtonStat.setText("Série Statique");
@@ -370,14 +374,21 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 radioButtonStatActionPerformed(evt);
             }
         });
-        getContentPane().add(radioButtonStat, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 280, 210, 40));
+        getContentPane().add(radioButtonStat, new org.netbeans.lib.awtextra.AbsoluteConstraints(1070, 320, 210, 40));
 
         imagePanel.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 153), 3, true));
         imagePanel.setPreferredSize(new Dimension(IMAGE_SIZE, IMAGE_SIZE));
         imagePanel.setRequestFocusEnabled(false);
+        imagePanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                imagePanelMouseReleased(evt);
+            }
+        });
         imagePanel.setLayout(new javax.swing.BoxLayout(imagePanel, javax.swing.BoxLayout.LINE_AXIS));
         getContentPane().add(imagePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 10, 600, 600));
 
+        nextButton.setBackground(java.awt.Color.cyan);
+        nextButton.setFont(new java.awt.Font("Wide Latin", 1, 14)); // NOI18N
         nextButton.setText(">>");
         nextButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -385,6 +396,8 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
             }
         });
 
+        prevButton.setBackground(java.awt.Color.cyan);
+        prevButton.setFont(new java.awt.Font("Wide Latin", 0, 12)); // NOI18N
         prevButton.setText("<<");
         prevButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -396,6 +409,9 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         imageSlider.setPaintTicks(true);
         imageSlider.setSnapToTicks(true);
         imageSlider.setValue(0);
+        imageSlider.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        imageSlider.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        imageSlider.setOpaque(true);
         imageSlider.setPreferredSize(new java.awt.Dimension(512, 23));
         imageSlider.setValueIsAdjusting(true);
         imageSlider.addChangeListener(new javax.swing.event.ChangeListener() {
@@ -405,6 +421,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         });
 
         imageIDTextField.setEditable(false);
+        imageIDTextField.setBackground(new java.awt.Color(153, 255, 255));
         imageIDTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         imageIDTextField.setText("               ");
         imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
@@ -463,9 +480,9 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
 
         getContentPane().add(imageOptionsPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 610, 640, 120));
 
-        jLabel5.setText("Max");
-        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 10, 30, -1));
-
+        selectAorta.setBackground(new java.awt.Color(51, 102, 255));
+        selectAorta.setFont(new java.awt.Font("sansserif", 1, 14)); // NOI18N
+        selectAorta.setForeground(new java.awt.Color(255, 255, 255));
         selectAorta.setText("<html>Sélectionner Aorte</html>");
         selectAorta.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         selectAorta.addActionListener(new java.awt.event.ActionListener() {
@@ -473,9 +490,12 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 selectAortaActionPerformed(evt);
             }
         });
-        getContentPane().add(selectAorta, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 240, 230, 50));
+        getContentPane().add(selectAorta, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 260, 230, 50));
 
-        tridimObsButton.setText("Observation 3D");
+        tridimObsButton.setBackground(new java.awt.Color(204, 255, 255));
+        tridimObsButton.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
+        tridimObsButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        tridimObsButton.setLabel("3D Viewer");
         tridimObsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 tridimObsButtonActionPerformed(evt);
@@ -483,21 +503,23 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         });
         getContentPane().add(tridimObsButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 180, 230, 60));
 
+        frameList.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                frameListActionPerformed(evt);
+            }
+        });
+        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1260, 170, -1, -1));
+
         sliderMax.setMaximum(100000);
-        sliderMax.setMinorTickSpacing(1);
-        sliderMax.setPaintLabels(true);
         sliderMax.setSnapToTicks(true);
-        sliderMax.setToolTipText("");
-        sliderMax.setValue(5);
-        sliderMax.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        sliderMax.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        sliderMax.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED), "Max", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("sansserif", 1, 12), java.awt.Color.blue)); // NOI18N
         sliderMax.setValueIsAdjusting(true);
         sliderMax.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 sliderMaxStateChanged(evt);
             }
         });
-        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 10, 360, 24));
+        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 9, 570, 60));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -511,7 +533,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         int startFrame, endFrame;
        
         // On récupère la liste des frames
-        ComboBoxModel model = this.frameList.getModel();
+        ComboBoxModel model = frameList.getModel();
          String[] frames = new String[model.getSize()];
         for (int i = 0; i < model.getSize(); i++) {
             frames[i] = "" + (i + 1);
@@ -522,24 +544,18 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         String[] frames2 = Arrays.copyOfRange(frames, startFrame + 1, frames.length);
         endFrame = -1 + Integer.valueOf((String)JOptionPane.showInputDialog(null, "Choisir la coupe de fin", "Coupes temporelles à sommer", JOptionPane.INFORMATION_MESSAGE, null, frames2, frames2[0]));
         JOptionPane.showMessageDialog(null, "Somme de la coupe " + (startFrame+1) + " - " + (endFrame+1));
-        if (this.patientMultiSeries == null) {        
-            this.patient.selectAorta(null, startFrame, endFrame);
+        if (patientMultiSeries == null) {        
+            patient.selectAorta(null, startFrame, endFrame);
         }
         else {
             
-            this.patientMultiSeries.selectAorta(startFrame, endFrame);
+            patientMultiSeries.selectAorta(startFrame, endFrame);
         }
         
        
         
         
     }//GEN-LAST:event_selectAortaActionPerformed
-
-    private void sliderMaxStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMaxStateChanged
-        this.maxBrightness = this.sliderMax.getValue();
-        this.currentLUT.max = this.sliderMax.getValue();
-        display(this.currentImageID);
-    }//GEN-LAST:event_sliderMaxStateChanged
 
     private void frameListActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_frameListActionPerformed
         try {
@@ -570,16 +586,16 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         if (this.summButton.isSelected()) {
             int s1 = this.summ1.getSelectedIndex();
             int s2 = this.summ2.getSelectedIndex();
-            float[][] imagePixels = this.patient.summSlices(s1, s2); 
-            this.currentImageTitle = "Somme de la frame " + (s1 + 1) + " à " + (s2 + 1);
+            float[][] imagePixels = patient.summSlices(s1, s2); 
+            currentImageTitle = "Somme de la frame " + (s1 + 1) + " à " + (s2 + 1);
             for (int frame = 0; frame < this.imagesPerBlock; frame++) {
-                  this.displayedImages[frame] = DicomUtils.pixelsToBufferedImage(this.patient.getWidth(), this.patient.getHeight(), imagePixels[frame]);
+                  displayedImages[frame] = DicomUtils.pixelsToBufferedImage(patient.getWidth(), patient.getHeight(), imagePixels[frame]);
             }
         }
         else {
             try {
                 //On affiche les frames
-                PatientSerieViewer.displayedImages = getImagesToDisplay(this.frameList.getSelectedIndex());
+                PatientSerieViewer.displayedImages = getImagesToDisplay(frameList.getSelectedIndex());
             } catch (BadParametersException ex) {
                 Logger.getLogger(PatientSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -611,19 +627,19 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_saveSummsButtonActionPerformed
 
     private void radioButtonDyn1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonDyn1ActionPerformed
-        this.patient = this.patientMultiSeries.getStartDynSerie();
+        patient = patientMultiSeries.getStartDynSerie();
         updateComponents();
         display(currentImageID);
     }//GEN-LAST:event_radioButtonDyn1ActionPerformed
 
     private void radioButtonStatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonStatActionPerformed
-        this.patient = this.patientMultiSeries.getStaticSerie();
+        patient = patientMultiSeries.getStaticSerie();
         updateComponents();
         display(currentImageID);
     }//GEN-LAST:event_radioButtonStatActionPerformed
 
     private void radioButtonDyn2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonDyn2ActionPerformed
-        this.patient = this.patientMultiSeries.getEndDynSerie();
+        patient = patientMultiSeries.getEndDynSerie();
         updateComponents();
         display(currentImageID);
     }//GEN-LAST:event_radioButtonDyn2ActionPerformed
@@ -637,11 +653,11 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_radioButtonStatStateChanged
 
     private void tridimObsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tridimObsButtonActionPerformed
-        ImageStack imgStack = new ImageStack(this.patient.getWidth(), this.patient.getHeight(), null);
+        ImageStack imgStack = new ImageStack(patient.getWidth(), patient.getHeight(), null);
         ImageProcessor imProc;
        
         
-        for (BufferedImage buff : this.displayedImages) {
+        for (BufferedImage buff : displayedImages) {
             BufferedImage newBuff = new BufferedImage(buff.getWidth(), buff.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
             Graphics2D g = newBuff.createGraphics();
             g.drawImage(buff, null, 0, 0);
@@ -660,6 +676,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         Image3DUniverse univ = new Image3DUniverse();
         Thread thread;
         thread = new Thread("Affichage 3D") {
+            @Override
             public void run() {
                
                 new StackConverter(imgPlus).convertToGray8();
@@ -690,31 +707,56 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     private void imageSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_imageSliderStateChanged
 
         if (imageSlider.getValue() > 0)
-        this.currentImageID = imageSlider.getValue() - 1;
-        display(this.currentImageID);
+            currentImageID = imageSlider.getValue() - 1;
+        display(currentImageID);
     }//GEN-LAST:event_imageSliderStateChanged
 
     private void prevButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_prevButtonActionPerformed
 
-        if (this.currentImageID > 1 ) {
-            this.imageSlider.setValue(--this.currentImageID);
+        if (currentImageID > 1 ) {
+            imageSlider.setValue(--currentImageID);
         }
         //display(currentImageID);
 
     }//GEN-LAST:event_prevButtonActionPerformed
 
-    /**
-     * Affiche la prochaine image
-     * @param evt 
-     */
+    
     private void nextButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextButtonActionPerformed
 
-        if (this.currentImageID < this.imagesPerBlock ) {
-            this.imageSlider.setValue(++this.currentImageID);
+        if (currentImageID < this.imagesPerBlock ) {
+            imageSlider.setValue(++currentImageID);
 
         }
 
     }//GEN-LAST:event_nextButtonActionPerformed
+
+    private void sliderMaxStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMaxStateChanged
+        maxBrightness = this.sliderMax.getValue();
+        this.currentLUT.max = this.sliderMax.getValue();
+        display(currentImageID);
+    }//GEN-LAST:event_sliderMaxStateChanged
+
+    private void imagePanelMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_imagePanelMouseReleased
+        if (evt.isPopupTrigger()) {
+            popUpMenu.show(this, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_imagePanelMouseReleased
+
+    private void saveImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveImagesActionPerformed
+        FloatProcessor[] fps = new FloatProcessor[displayedImages.length];
+        BufferedImage b;
+        for (int i = 0; i < displayedImages.length; i++) {
+            b = displayedImages[i];
+            float[] pixels = new float[b.getWidth()*b.getHeight()];
+            pixels = b.getData().getPixel(0, 0, pixels);
+            
+            fps[i] = new FloatProcessor(b.getWidth(), b.getHeight(), pixels);
+        }
+        
+        String dirPath = IJ.getFilePath("Choisir le dossier de sauvegarde");
+        
+        DicomUtils.saveImages(fps, dirPath);
+    }//GEN-LAST:event_saveImagesActionPerformed
     
     /**
      * Affiche l'image d'id imageID dans la fenetre
@@ -827,7 +869,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         if (sliceIndex > this.nbTimeSlices)
             throw new BadParametersException("L'indice de la coupe temporelle fournie n'est pas accessible");
         
-        Block block = this.patient.getBlock(sliceIndex);
+        Block block = patient.getBlock(sliceIndex);
         BufferedImage[] buffs = new BufferedImage[block.size()];
         for (int frame = 0; frame < block.size(); frame++) {
             DicomImage dcm = block.getDicomImage(frame);
@@ -844,39 +886,6 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         return buffs;
     }
     
-  
-    
-    
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private static javax.swing.JTextField acquisitionTimeTextField;
-    private static javax.swing.JComboBox frameList;
-    private static javax.swing.JTextField imageIDTextField;
-    private javax.swing.JPanel imageOptionsPanel;
-    private javax.swing.JPanel imagePanel;
-    private static javax.swing.JSlider imageSlider;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel labelSliceList;
-    private javax.swing.JFileChooser maskFileChooser;
-    private javax.swing.JButton nextButton;
-    private javax.swing.JButton prevButton;
-    private javax.swing.JRadioButton radioButtonDyn1;
-    private javax.swing.JRadioButton radioButtonDyn2;
-    private javax.swing.JRadioButton radioButtonStat;
-    private javax.swing.JButton saveSummsButton;
-    private javax.swing.JButton selectAorta;
-    private javax.swing.JSlider sliderMax;
-    private javax.swing.JSlider sliderMin;
-    private javax.swing.JComboBox summ1;
-    private javax.swing.JComboBox summ2;
-    private javax.swing.JToggleButton summButton;
-    private javax.swing.JButton tridimObsButton;
-    // End of variables declaration//GEN-END:variables
-    
-    
-
     private static BufferedImage saturateImage(BufferedImage buff) {
           BufferedImage b = new BufferedImage(buff.getWidth(), buff.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
           Graphics2D g = b.createGraphics();
@@ -895,9 +904,9 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
      */
     private BufferedImage[] getSummSlices(int s1, int s2) {
         BufferedImage[] buffs = new BufferedImage[this.imagesPerBlock];
-        float[][] imagePixels = this.patient.summSlices(s1, s2); 
+        float[][] imagePixels = patient.summSlices(s1, s2); 
         for (int frame = 0; frame < this.imagesPerBlock; frame++) {
-              buffs[frame] = DicomUtils.pixelsToBufferedImage(this.patient.getWidth(), this.patient.getHeight(), imagePixels[frame]);
+              buffs[frame] = DicomUtils.pixelsToBufferedImage(patient.getWidth(), patient.getHeight(), imagePixels[frame]);
         }
         
         return buffs;
@@ -907,8 +916,8 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         
         System.out.println("On mets à jour les composants");
        //this.nbImages = p.getMaxDicomImage();
-        this.pixelUnity = this.patient.getPixelUnity();
-        currentImageID = 0;
+        this.pixelUnity = PatientSerieViewer.patient.getPixelUnity();
+        currentImageID = imageSlider.getValue();
         
         
         
@@ -917,11 +926,11 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         
         
         try {
-            this.imagesPerBlock = this.patient.getNbImages(0);
+            this.imagesPerBlock = patient.getNbImages(0);
         } catch (BadParametersException ex) {
             Logger.getLogger(PatientSerieViewer.class.getName()).log(Level.SEVERE, null, ex);
         }
-        this.nbTimeSlices = this.patient.getNbBlocks();
+        this.nbTimeSlices = patient.getNbBlocks();
         
          try {
             displayedImages = getImagesToDisplay(0);
@@ -931,8 +940,8 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         
          //Slider de luminosité
          //On sature le moins possible l'image au début
-        this.sliderMax.setValue(this.sliderMax.getMaximum()/2);
-        this.sliderMin.setValue(this.sliderMax.getMinimum());
+        this.sliderMin.setValue(this.sliderMin.getMaximum()/2);
+        this.sliderMin.setValue(this.sliderMin.getMinimum());
         
         
        
@@ -952,13 +961,13 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         
        //frameList settings
             //On ajoute toutes les frames
-        if (this.patient instanceof TAPSerie) {
+        if (patient instanceof TAPSerie) {
             this.labelSliceList.setText("Coupe corporelle");
         }
         frameList.removeAllItems();
         this.summ1.removeAllItems();
         this.summ2.removeAllItems();
-        for (int i=0; i<this.patient.getNbBlocks(); i++) {
+        for (int i=0; i<patient.getNbBlocks(); i++) {
             frameList.addItem("" + (i+1));
             this.summ1.addItem("" + (i+1));
             this.summ2.addItem("" + (i+1));
@@ -986,6 +995,36 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     public static Roi getRoi() {
         return currentImagePlus.getRoi();
     }
+    
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private static javax.swing.JTextField acquisitionTimeTextField;
+    private javax.swing.JMenuItem applyLUT;
+    private static javax.swing.JComboBox frameList;
+    private static javax.swing.JTextField imageIDTextField;
+    private javax.swing.JPanel imageOptionsPanel;
+    private javax.swing.JPanel imagePanel;
+    private static javax.swing.JSlider imageSlider;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel labelSliceList;
+    private javax.swing.JFileChooser maskFileChooser;
+    private javax.swing.JButton nextButton;
+    private javax.swing.JPopupMenu popUpMenu;
+    private javax.swing.JButton prevButton;
+    private javax.swing.JRadioButton radioButtonDyn1;
+    private javax.swing.JRadioButton radioButtonDyn2;
+    private javax.swing.JRadioButton radioButtonStat;
+    private javax.swing.JMenuItem saveImages;
+    private javax.swing.JButton saveSummsButton;
+    private javax.swing.JButton selectAorta;
+    private javax.swing.JSlider sliderMax;
+    private javax.swing.JSlider sliderMin;
+    private javax.swing.JComboBox summ1;
+    private javax.swing.JComboBox summ2;
+    private javax.swing.JToggleButton summButton;
+    private javax.swing.JButton tridimObsButton;
+    // End of variables declaration//GEN-END:variables
+    
   
 
     

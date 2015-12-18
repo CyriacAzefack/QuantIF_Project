@@ -200,6 +200,8 @@ public class Hunter {
             buildKhImages();
 
             displayAndSaveKhImages();
+            String dirPath = "tmp\\HunterImagesKh\\";
+            DicomUtils.saveImages(khImages, dirPath);
         }
         System.out.println("************FIN HUNTER*************");
     }
@@ -348,28 +350,34 @@ public class Hunter {
      * On sauvegarde et on affiche les images des Ki
      */
     private void displayAndSaveKhImages() {
-        String dirPath = "tmp\\imagesKh";
-        File file = new File(dirPath);
+        
+        
         //On vide le dossier
-        DicomUtils.emptyDirectory(file);
-        ImagePlus imp;
-        ImageStack is = new ImageStack(width, height);
+        
+        
         BufferedImage[] buffs = new BufferedImage[khImages.length];
         for (int i = 0; i < buffs.length; i++) {
             buffs[i] = khImages[i].getBufferedImage();
-            is.addSlice(khImages[i]);
-            imp = new ImagePlus("image "+i, khImages[i]);
-            //On sauvegarde les images ki
-            IJ.save(imp, file.getAbsolutePath()+"\\IM"+i);
+            
         }
         
-        System.out.println("Images des Kh sauvegardées dans le dossier \"" 
-                + file.getAbsolutePath() + "\"");
+       
         
        PatientSerieViewer.setDisplayedImage(buffs, "Kh Images");
        
       
       
        
+    }
+    
+    /**
+     * Renvoie le KH
+     * @param stackIndex indice de l'image
+     * @param x coordonnée du pixel
+     * @param y coordonnée du pixel
+     * @return 
+     */
+    public float getKh(int stackIndex, int x, int y) {
+        return this.khImages[stackIndex].getPixelValue(x, y);
     }
 }

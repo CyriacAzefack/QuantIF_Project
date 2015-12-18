@@ -4,15 +4,6 @@
  */
 package aa;
 
-import ij.IJ;
-import ij.ImagePlus;
-import ij.WindowManager;
-import ij.process.FloatProcessor;
-import java.awt.Component;
-import java.awt.Frame;
-import java.awt.event.MouseWheelListener;
-import javax.swing.JInternalFrame;
-
 /**
  *
  * @author Cyriac
@@ -24,53 +15,7 @@ public class testDisplay extends javax.swing.JFrame {
      */
     public testDisplay() {
         initComponents();
-        String path = "C:\\Users\\kamelya\\Desktop\\dw.png";
-        ImagePlus imp = IJ.openImage(path);
-        imp.setTitle(path);
         
-        //WindowManager.setTempCurrentImage(imp);
-        imp.show();
-        
-        WindowManager.setTempCurrentImage(imp);
-        Frame frame = WindowManager.getCurrentWindow();
-        frame.dispose();
-        
-        //window.setVisible(true);
-        //window.toFront();
-        
-        
-        //jiFrame.setContentPane(frame.getFocusCycleRootAncestor());
-        
-        Component[] comps = frame.getComponents();
-        
-       
-        //MouseWheelListener[] mwlisteners = frame.getMouseWheelListeners();
-       
-        
-        for (Component comp : comps) {
-            System.out.println(comp.toString());
-            this.panel.add(comp);  
-        }
-        
-        imp.setProcessor(new FloatProcessor(600,600));
-        /*
-        for (MouseWheelListener comp : mwlisteners) {
-            jiFrame.addMouseWheelListener(comp);
-        }
-       */
-        /*
-        for (ContainerListener list : listeners) {
-            jiFrame.addContainerListener(list);
-        }
-        */
-        //jiFrame.setContentPane(((JFrame)frame).getContentPane());
-        
-        panel.setSize(this.getSize());
-        panel.setVisible(true);
-        
-        
-        
-        //buff = PatientSerieViewer.rescale(buff, this.getWidth(), this.getHeight());
         
     }
 
@@ -83,29 +28,44 @@ public class testDisplay extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        panel = new javax.swing.JPanel();
+        popUpMenu = new javax.swing.JPopupMenu();
+        menu1 = new javax.swing.JMenuItem();
+        menu2 = new javax.swing.JMenuItem();
+
+        menu1.setText("Menu1");
+        popUpMenu.add(menu1);
+
+        menu2.setText("menu2");
+        menu2.setToolTipText("");
+        popUpMenu.add(menu2);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Test integration IJ");
+        addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                formMouseReleased(evt);
+            }
+        });
 
-        panel.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 0, 0)));
-        panel.setToolTipText("");
-
-        javax.swing.GroupLayout panelLayout = new javax.swing.GroupLayout(panel);
-        panel.setLayout(panelLayout);
-        panelLayout.setHorizontalGroup(
-            panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 955, Short.MAX_VALUE)
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 660, Short.MAX_VALUE)
         );
-        panelLayout.setVerticalGroup(
-            panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 584, Short.MAX_VALUE)
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 398, Short.MAX_VALUE)
         );
-
-        getContentPane().add(panel, java.awt.BorderLayout.CENTER);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void formMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseReleased
+        if (evt.isPopupTrigger()) {
+            popUpMenu.show(this, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_formMouseReleased
 
     /**
      * @param args the command line arguments
@@ -137,6 +97,8 @@ public class testDisplay extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel panel;
+    private javax.swing.JMenuItem menu1;
+    private javax.swing.JMenuItem menu2;
+    private javax.swing.JPopupMenu popUpMenu;
     // End of variables declaration//GEN-END:variables
 }

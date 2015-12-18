@@ -54,6 +54,7 @@ public class main_window extends javax.swing.JFrame {
     private static Object lock;
     private TAPSerieViewer tsv;
     private PatientSerieViewer psv;
+    private boolean openCancelled;
     
     /**
      * Creates new form main_window
@@ -119,7 +120,9 @@ public class main_window extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("QuantIF_Project");
         setAutoRequestFocus(false);
+        setBackground(new java.awt.Color(255, 255, 255));
         setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setForeground(java.awt.Color.darkGray);
 
         desktop.setLayout(new java.awt.BorderLayout());
 
@@ -128,15 +131,21 @@ public class main_window extends javax.swing.JFrame {
         jScrollPane1.setVerifyInputWhenFocusTarget(false);
 
         patientDescriptTextField.setEditable(false);
+        patientDescriptTextField.setBackground(new java.awt.Color(255, 255, 255));
         patientDescriptTextField.setColumns(20);
-        patientDescriptTextField.setFont(new java.awt.Font("Lucida Console", 0, 14)); // NOI18N
+        patientDescriptTextField.setFont(new java.awt.Font("Lucida Console", 0, 12)); // NOI18N
         patientDescriptTextField.setLineWrap(true);
         patientDescriptTextField.setRows(5);
         patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
+        patientDescriptTextField.setToolTipText("Output");
         patientDescriptTextField.setAutoscrolls(false);
-        patientDescriptTextField.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        patientDescriptTextField.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "System Output", javax.swing.border.TitledBorder.LEFT, javax.swing.border.TitledBorder.ABOVE_TOP));
         patientDescriptTextField.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         jScrollPane1.setViewportView(patientDescriptTextField);
+
+        desktop.add(jScrollPane1, java.awt.BorderLayout.PAGE_END);
+
+        getContentPane().add(desktop, java.awt.BorderLayout.CENTER);
 
         jMenu1.setText("Application");
         jMenu1.addActionListener(new java.awt.event.ActionListener() {
@@ -245,21 +254,6 @@ public class main_window extends javax.swing.JFrame {
 
         setJMenuBar(jMenuBar1);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1003, Short.MAX_VALUE)
-            .addComponent(desktop, javax.swing.GroupLayout.Alignment.TRAILING)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(desktop, javax.swing.GroupLayout.DEFAULT_SIZE, 469, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE))
-        );
-
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
@@ -352,6 +346,8 @@ public class main_window extends javax.swing.JFrame {
     }//GEN-LAST:event_closeAllSeriesActionPerformed
 
     private void openMultiAcqMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMultiAcqMenuActionPerformed
+        
+        this.openCancelled = false;
         //On ferme le patient ou la multi acquisition ouvert avant
         if (this.patient != null) 
             this.closeAllSeriesActionPerformed(evt);
@@ -359,7 +355,7 @@ public class main_window extends javax.swing.JFrame {
         if (this.patientMultiSeries != null)
             this.closeMultiAcqMenuActionPerformed(evt);
         
-        this.patientDescriptTextField.setText("Ouverture de la multi acquisition en cours...\n");
+        this.patientDescriptTextField.setText("Début Ouverture de la Multi Acquisition!!\n");
         
         //On ouvre les différentes série une par une 
         
@@ -368,114 +364,114 @@ public class main_window extends javax.swing.JFrame {
         this.patientDescriptTextField.append("Ouverture de la première série dynamique en cours...\n");
         startDynSerie = chooseTEPSerie(true);
         
-        //SERIE STATIQUE
-        TAPSerie staticSerie;
-        this.patientDescriptTextField.append("Ouverture de la série statique en cours...\n");
-        staticSerie = chooseTAPSerie(startDynSerie);
+        if (!openCancelled) {
         
-       
-        TAPSerieViewer tapViewer = new TAPSerieViewer(staticSerie);
-        
+            //SERIE STATIQUE
+            TAPSerie staticSerie;
+            this.patientDescriptTextField.append("\n\nOuverture de la série statique en cours...\n");
+            staticSerie = chooseTAPSerie(startDynSerie);
+            
+            if (!openCancelled) {
 
 
-        //tsv.setSize(this.viewerLabel.getSize());
-        //this.viewerLabel.removeAll();
-        
+                TAPSerieViewer tapViewer = new TAPSerieViewer(staticSerie);
 
-        //Thread gérant l'attente du choix de la coupe corporelle
-        Thread thread = new Thread("Choosing Body block Thread") {
-            public void run() {
-                synchronized(lock) {
-                    while (tapViewer.isVisible()) {
-                        try {
-                            System.out.println("Waiting choice...");
-                            lock.wait();
 
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                //Thread gérant l'attente du choix de la coupe corporelle
+                Thread thread = new Thread("Choosing Body block Thread") {
+                    public void run() {
+                        synchronized(lock) {
+                            while (tapViewer.isVisible()) {
+                                try {
+                                    patientDescriptTextField.append("\nSelection de la coupe corporelle en cours...\n");
+                                    System.out.println("Waiting choice...");
+                                    lock.wait();
+
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            System.out.println("INIT SERIE TAP fini ");
+
                         }
                     }
-                    System.out.println("INIT SERIE TAP fini ");
-
-                }
-            }
-        };
-        
+                };
 
 
-        System.out.println("Setting the unlock!!");
-        
-       //On debloque le vérrou a la fermeture de la fenêtre de choix de coupe corporelle
-        tapViewer.addInternalFrameListener(new InternalFrameAdapter () {
-            
-            @Override
-            public void internalFrameClosed(InternalFrameEvent e) {
-                System.out.println("TAPSerie viewer is closing!!");
-                synchronized (lock) {
-                    tapViewer.setVisible(false);
-                    
-                    lock.notify();
-                }
-            }
 
-        });
-        tapViewer.setVisible(true);
-        this.desktop.add(tapViewer);
-        thread.start();
-        //On attends que le thread meure
-        
-        
-        
-        //SERIE DYNAMIQUE DE FIN
-       
-        Thread dynamicChoiceThread = new Thread("Dynamic waiting thread") {
-           
-            /**
-             * Attends le thread de la TAP avant de commencer celui de la dernière série dynamique
-             */
-            @Override
-            public void run() {
-                try {
-                    //On attends la sélection de la coupe corporelle
-                    thread.join();
-                    patientDescriptTextField.append("Ouverture de la dernière série dynamique en cours...\n");
-                    TEPSerie endDynSerie = chooseTEPSerie(false);
-                    
-                    if ((startDynSerie != null) && (staticSerie != null) && (endDynSerie != null)) {
+                
+
+               //On debloque le vérrou a la fermeture de la fenêtre de choix de coupe corporelle
+                tapViewer.addInternalFrameListener(new InternalFrameAdapter () {
+
+                    @Override
+                    public void internalFrameClosed(InternalFrameEvent e) {
+                        
+                        synchronized (lock) {
+                            tapViewer.setVisible(false);
+
+                            lock.notify();
+                        }
+                    }
+
+                });
+                tapViewer.setVisible(true);
+                this.desktop.add(tapViewer);
+                thread.start();
+                
+
+
+
+                //SERIE DYNAMIQUE DE FIN
+
+                Thread dynamicChoiceThread = new Thread("Dynamic waiting thread") {
+
+                    /**
+                     * Attends le thread de la TAP avant de commencer celui de la dernière série dynamique
+                     */
+                    @Override
+                    public void run() {
                         try {
-                            patientMultiSeries = new PatientMultiSeries(startDynSerie, staticSerie, endDynSerie);
-                            JOptionPane.showMessageDialog(desktop, "La multi-acquisition a été ouverte avec succès", "Info", JOptionPane.PLAIN_MESSAGE);
-                            //On affiche les images de la mutli-série
-                            displayImages();
-                            
-                            //On active les méthodes de quantification
-                            
-                            patlakQuantMethod.setEnabled(true);
-                            hunterQuantMethod.setEnabled(true);
-                            barbQuantMethod.setEnabled(true);
-                            
-                        } catch (SeriesOrderException ex) {
-                            JOptionPane.showMessageDialog(desktop, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                            patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
-                        } catch (PatientStudyException ex) {
+                            //On attends la sélection de la coupe corporelle
+                            thread.join();
+                            patientDescriptTextField.append("Ouverture de la dernière série dynamique en cours...\n");
+                            TEPSerie endDynSerie = chooseTEPSerie(false);
+                            if (!openCancelled) {
+
+                                if ((startDynSerie != null) && (staticSerie != null) && (endDynSerie != null)) {
+                                    try {
+                                        patientMultiSeries = new PatientMultiSeries(startDynSerie, staticSerie, endDynSerie);
+                                        JOptionPane.showMessageDialog(desktop, "La multi-acquisition a été ouverte avec succès", "Info", JOptionPane.PLAIN_MESSAGE);
+                                        //On affiche les images de la mutli-série
+                                        displayImages();
+
+                                        //On active les méthodes de quantification
+
+                                        patlakQuantMethod.setEnabled(true);
+                                        hunterQuantMethod.setEnabled(true);
+                                        barbQuantMethod.setEnabled(true);
+
+                                    } catch (SeriesOrderException ex) {
+                                        JOptionPane.showMessageDialog(desktop, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                                        patientDescriptTextField.setText("PAS DE PATIENT EN COURS");
+                                    } catch (PatientStudyException ex) {
+                                        Logger.getLogger(main_window.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
+                                } else {
+                                    System.out.println("PEUT PAS OUVRIR MULTI ACQ (Une série est \"null\") ");
+                                }
+                            }
+                        } catch (InterruptedException ex) {
                             Logger.getLogger(main_window.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                    } else {
-                        System.out.println("PEUT PAS OUVRIR MULTI ACQ (Une série est \"null\") ");
                     }
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(main_window.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
 
-        };
-        System.out.println("Dynamic choice thread starting!");
-        dynamicChoiceThread.start();
-       
-        
-        
-        
-      
+                };
+                System.out.println("Dynamic choice thread starting!");
+                dynamicChoiceThread.start();
+            }
+            
+        }
         
     }//GEN-LAST:event_openMultiAcqMenuActionPerformed
 
@@ -564,7 +560,7 @@ public class main_window extends javax.swing.JFrame {
      */
     private TEPSerie chooseTEPSerie(boolean isFirst) {
         TEPSerie p = null;
-        this.patientDescriptTextField.setText("Ouverture de la série dynamique en cours...");
+        
        
         JFileChooser chooser = this.dynSerieChooser;
         int returnVal = chooser.showOpenDialog(this);
@@ -592,6 +588,7 @@ public class main_window extends javax.swing.JFrame {
 		try {
 			p = new TEPSerie(patientDirPath, true, isFirst);
                         JOptionPane.showMessageDialog(desktop, "L'acquisition a été ouverte avec succès\n\n"+p.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
+                        
                         this.patientDescriptTextField.append(p.toString());
                         
                         
@@ -602,7 +599,7 @@ public class main_window extends javax.swing.JFrame {
 			// TODO Auto-generated catch block
                    
 			JOptionPane.showMessageDialog(desktop, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                        this.patientDescriptTextField.setText("Erreur Lors de l'ouverture...");
+                        this.patientDescriptTextField.append("Erreur Lors de l'ouverture...");
                         
 		} 
                 
@@ -614,7 +611,9 @@ public class main_window extends javax.swing.JFrame {
             }
            
         } else {
-            System.out.println("File access cancelled by user.");
+            this.openCancelled = true;
+            this.patientDescriptTextField.append("\nAnnulation ouverture série TEP!!\n");
+            this.patientDescriptTextField.append("PAS DE PATIENT EN COURS!!\n");
         }
         return p;
     }
@@ -670,7 +669,7 @@ public class main_window extends javax.swing.JFrame {
 
     private synchronized TAPSerie chooseTAPSerie(TEPSerie startTEPSerie) {
         TAPSerie tapSerie = null;
-        this.patientDescriptTextField.setText("Ouverture de la série statique en cours...");
+        
        
         JFileChooser chooser = this.statSerieChooser;
         int returnVal = chooser.showOpenDialog(this);
@@ -727,7 +726,9 @@ public class main_window extends javax.swing.JFrame {
             }
            
         } else {
-            System.out.println("File access cancelled by user.");
+            this.openCancelled = true;
+            this.patientDescriptTextField.append("\nAnnulation ouverture série TAP!!\n");
+            this.patientDescriptTextField.append("PAS DE PATIENT EN COURS!!\n");
         }
         return tapSerie;
     }

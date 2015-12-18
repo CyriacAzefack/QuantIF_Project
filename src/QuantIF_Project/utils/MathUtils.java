@@ -177,5 +177,36 @@ public class MathUtils {
         return y;
     }
     
+    /**
+     * Résoudre un système de 2 équations 2 inconnues : <br/>
+     * a<sub>1</sub>x + b<sub>1</sub>x  = c<sub>1</sub> <br/>
+
+     * a<sub>2</sub>x + b<sub>2</sub>x  =c<sub>2</sub> <br/>
+     * 
+
+     * @param a [a<sub>1</sub>, a<sub>2</sub>]
+     * @param b [b<sub>1</sub>, b<sub>2</sub>]
+     * @param c [c<sub>1</sub>, c<sub>2</sub>]
+     * @return 
+     */ 
+    public static double[] solveEquations(double[] a, double[] b, double[] c) throws BadParametersException {
+        if (a.length != 2 || b.length != 2 || c.length != 2)
+            throw new BadParametersException("Les tableaux doivent être de taille 2");
+        
+        double det = a[0]*b[1] - a[1]*b[0];
+        double x = Double.NaN;
+        double y = Double.NaN;
+       
+            
+        
+        if (det != 0) {
+            x = (c[0]*b[1] - c[1]*b[0])/det;
+            y = (a[0]*c[1] - a[1]*c[0])/det;
+        }
+        
+        double[] result = {x, y};
+        
+        return result;
+    }
    
 }

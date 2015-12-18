@@ -339,4 +339,26 @@ public class DicomUtils {
         }
    }
    
+   /**
+     * Sauvegarde les images
+     * @param images
+     * @param dirPath 
+     */
+    public static void saveImages(FloatProcessor[] images, String dirPath) {
+        ImageStack is = new ImageStack(images[0].getWidth(), images[0].getHeight());
+        File file = new File(dirPath);
+        file.mkdirs();
+        //On vide le dossier
+        DicomUtils.emptyDirectory(file);
+        for (int i = 0; i < images.length; i++) {
+            FloatProcessor image = images[i];
+            is.addSlice(image);
+            ImagePlus imp = new ImagePlus("image "+i, image);
+            //On sauvegarde les images ki
+            IJ.save(imp, file.getAbsolutePath()+"\\IM"+i);
+        }
+        
+        ImagePlus imp = new ImagePlus("", is);
+    }
+   
 }
