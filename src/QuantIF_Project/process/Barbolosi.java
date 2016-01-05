@@ -4,6 +4,7 @@
  */
 package QuantIF_Project.process;
 
+
 import QuantIF_Project.gui.Main_Window;
 import QuantIF_Project.gui.PatientSerieViewer;
 import QuantIF_Project.patient.PatientMultiSeries;
@@ -20,10 +21,6 @@ import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.util.ArrayUtil;
 import ij.util.Tools;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -163,7 +160,7 @@ public class Barbolosi {
      * prélèvement
      */
     private int[] nearestTimeFrameIndexes;
-    private boolean roiChoosed;
+    
     
     
     public Barbolosi (PatientMultiSeries pms) {
@@ -569,57 +566,18 @@ public class Barbolosi {
      */
     private void setRoiTumor(int takingIndex, ImagePlus trioImp) {
         
-        //frame.setLayout(new BoxLayout(frame, BoxLayout.PAGE_AXIS));
-        this.roiChoosed = false;
-        
-        
-        
-        
-        //Thread gérant l'attente du dessin de la ROI
-        waitingROITumorThreads[takingIndex] = new Thread("Choosing Body block Thread") {
-            public void run() {
-                synchronized(lock) {
-                    while (!roiChoosed) {
-                        try {
-                            Main_Window.addOutput("\nDessin de la ROI de la tumeur en cours...\n");
-                            System.out.println("Waiting roi draw...");
-                            lock.wait();
-
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    System.out.println("ROI dessiné ");
-                    getMeanAndSigmaFDGTumor(takingIndex, trioImp);
-
-                }
-            }
-        };
-        
-        
-        
-        ActionListener al = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                synchronized (lock) {
-                 
-                    
-                    roiTumor[takingIndex] = PatientSerieViewer.getRoi();
-                    if (roiTumor[takingIndex] == null) {
-                        JOptionPane.showMessageDialog(null, "Aucune Roi n'a été déssinée!!");
-                        cancelled = true;
-                    } 
-                    roiChoosed = true;
-                    lock.notify();
-               }
-            }
-        };
-        
        
         
-        Main_Window.setContinueButton(al);
         
-        JOptionPane.showMessageDialog(null, "Prélèvement N°"+(takingIndex+1)+"/"+NB_TAKINGS+"\nTracer la ROI autour de la tumeur puis appuyer sur le bouton \"Continuer\"");
+        
+        
+        
+        getMeanAndSigmaFDGTumor(takingIndex, trioImp);
+        
+        
+        
+        
+       
         
         
         
