@@ -4,6 +4,7 @@
  */
 package QuantIF_Project.utils;
 
+import QuantIF_Project.gui.PatientSerieViewer;
 import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.TEPSerie;
 import QuantIF_Project.patient.exceptions.BadParametersException;
@@ -344,14 +345,14 @@ public class DicomUtils {
      * @param images
      * @param dirPath 
      */
-    public static void saveImages(FloatProcessor[] images, String dirPath) {
+    public static void saveImages(ImageProcessor[] images, String dirPath) {
         ImageStack is = new ImageStack(images[0].getWidth(), images[0].getHeight());
         File file = new File(dirPath);
         file.mkdirs();
         //On vide le dossier
         DicomUtils.emptyDirectory(file);
         for (int i = 0; i < images.length; i++) {
-            FloatProcessor image = images[i];
+            ImageProcessor image = images[i];
             is.addSlice(image);
             ImagePlus imp = new ImagePlus("image "+i, image);
             //On sauvegarde les images ki
@@ -359,6 +360,21 @@ public class DicomUtils {
         }
         
         ImagePlus imp = new ImagePlus("", is);
+    }
+    
+    /**
+     * On affiche les images
+     * @param images images à afficher
+     * @param title Titre des images
+     */
+    public static void display(ImageProcessor[] images, String title) {
+
+       BufferedImage[] buffs = new BufferedImage[images.length];
+       for (int i = 0; i < images.length; i++) {
+           buffs[i] = images[i].getBufferedImage();
+       }
+
+       PatientSerieViewer.setDisplayedImage(buffs, title);
     }
    
 }

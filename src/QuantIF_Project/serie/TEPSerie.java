@@ -602,6 +602,10 @@ public class TEPSerie implements Serie{
                 //On calcule les résultats à l'aide de cette Roi
 
                 getRoiResults(roi, summAll, framesStack);
+                
+                //On avertit la multi série que la ROI a été sélectionner donc on peut commencer les calculs pour les autres séries
+                if (this.parent != null && this.isFirstInMultiAcq)
+                    this.parent.roiSelected(roi);
             } catch (BadParametersException ex) {
                 Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -762,13 +766,15 @@ public class TEPSerie implements Serie{
         this.aortaResults = new AortaResults(this.name, roi, resultTable);
         
         
-        //On avertit la multi série que la ROI a été sélectionner donc on peut commencer les calculs pour les autres séries
-        if (this.parent != null && this.isFirstInMultiAcq)
-            this.parent.roiSelected(roi);
+        
         
         //On dessine sur l'image la ROI utilisée pour le calul
         ImagePlus impROI = WindowManager.getImage(imageTitle);
         impROI.setRoi(roi);
+        
+        //On affiche les résultats si la série est unique (ne fait pas partie d'une acquisition multiple)
+        if (!isPartOfMultAcq)
+            this.aortaResults.display("PROPCPS");
         
         
         
@@ -803,7 +809,7 @@ public class TEPSerie implements Serie{
         //On recupére la ROI dessinée sur la série si il y en a une
         if (impROI.getRoi() != null) {
             selectedRoi = impROI.getRoi();
-            //selectedRoi.setPosition(roi.getPosition());
+            
             
             
         }
@@ -824,7 +830,7 @@ public class TEPSerie implements Serie{
         System.out.println("Selected ROI position : " + selectedRoi.getPosition());
         
        
-        ImagePlus stack = framesStack[selectedRoi.getPosition()-1];
+        ImagePlus stack = framesStack[selectedRoi.getPosition()];
             
         
         //ImagePlus stackFrame = framesStack[selectedRoi.getPosition()-1];
@@ -923,7 +929,7 @@ public class TEPSerie implements Serie{
     }
     
     /**
-     * Retourne le temps de début de l'injection <br/>
+     * <p>Retourne le temps de début de l'injection </p>
      * Valeur du tag SeriesTime (<b>hhmmss.frac</b>)
      * @return 
      */

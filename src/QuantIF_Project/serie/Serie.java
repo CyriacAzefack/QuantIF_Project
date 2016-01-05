@@ -5,8 +5,11 @@
 package QuantIF_Project.serie;
 
 import QuantIF_Project.patient.AortaResults;
+import QuantIF_Project.patient.AortaResults;
+import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
+import QuantIF_Project.serie.Block;
 import ij.gui.Roi;
 import java.util.Date;
 
@@ -16,36 +19,39 @@ import java.util.Date;
  */
 public interface Serie {
     /**
-     * Renvoie la largeur des images
+     * @return la largeur des images
      */
     public int getWidth();
     
     /**
-     * Renvoie la hauteur des images
+     *  
+     * @return la hauteur des images
      */
     public int getHeight();
     
     /**
-     * Renvoie le nombre d'images pour un bloc donné (frame ou bodyBlock)
+     * 
      * @param blockIndex index du block
+     * @return le nombre d'images pour un bloc donné (frame ou bodyBlock)
      * @throws QuantIF_Project.patient.exceptions.BadParametersException
      */
     public int getNbImages(int blockIndex) throws BadParametersException;
     
     /**
-     * Renvoie le nombre de blocks (frame ou bodyBlock)
-     *  
+     
+     * @return le nombre de blocks (frame ou bodyBlock)
      */
     public int getNbBlocks();
     
     /**
-     * Retourne l'unité de la valeur du pixel 
+     * 
+     * @return l'unité de la valeur du pixel
      */
     public String getPixelUnity();
     
     /**
-     * Retourne le chemin du dossier où sont les images
-     *  
+       
+     * @return le chemin du dossier où sont les images
      */
     public String getSeriePath();
     
@@ -59,7 +65,8 @@ public interface Serie {
     public Block getBlock(int index) throws BadParametersException ;
     
     /**
-     * Calcule et retourne les résultats liés à la ROI déssinnée
+     * 
+     * @return résultats liés à la ROI déssinnée
      */
     public AortaResults getAortaResults();
     
@@ -71,12 +78,13 @@ public interface Serie {
     
     /**
      * 
-     * @return La taille du patient en <b>cm</cm>
+     * @return La taille du patient en <b>cm</b>
      */
     public int getPatientHeight();
     
     /**
-     * Date de début d'acquisition de la série
+     * 
+     * @return Date de début d'acquisition de la série
      */
     public Date getSerieStartDate();
     /**

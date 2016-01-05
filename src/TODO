@@ -1,11 +1,7 @@
-1- Fixer les fenêtres de selection d'aorte dans la frame principale
+05/01/16
 
-2- Sauvegarder/charger les données de sélection d'aorte (ROI + Résultats) (FAIT)
+1 - Hunter : prelevement unité en KBq/mL [Fait]
 
-3- Sauvegarder résultats Images Ki (FAIT)
+2 - Barbolosi : une Roi de départ -> recherceh max, garder (x,y,z) pour le pixel max
 
-4- Afficher tout le TAP (selectionner une coupe) (FAIT)
-
-5- Selection Aorte pour la TAP y/n (fit ds ts les cas). Utiliser le fit pour l'aire sous la courbe (FAIT)
-
-6- Hunter
+3 - Barbolsi : Quasi-Newton Method

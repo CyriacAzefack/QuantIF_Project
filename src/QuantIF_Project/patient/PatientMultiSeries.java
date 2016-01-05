@@ -4,13 +4,14 @@
  */
 package QuantIF_Project.patient;
 
+import QuantIF_Project.gui.PatientSerieViewer;
+import QuantIF_Project.serie.Serie;
 import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.TEPSerie;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.patient.exceptions.PatientStudyException;
 import QuantIF_Project.patient.exceptions.SeriesOrderException;
 import QuantIF_Project.serie.Block;
-import QuantIF_Project.serie.Serie;
 import QuantIF_Project.serie.TAPSerie;
 import com.pixelmed.dicom.TagFromName;
 import ij.gui.Roi;
@@ -108,12 +109,17 @@ public class PatientMultiSeries {
     }
 
     public void selectAorta(int startIndex, int endIndex)  {
-       System.out.println("*************************");
-       System.out.println("* DEBUT SELECTION AORTE *");
-       System.out.println("*************************");
-       this.startSummIndex = startIndex;
-       this.endSummIndex = endIndex;
-       this.startTEPSerie.selectAorta(null, startSummIndex, endSummIndex);
+        System.out.println("*************************");
+        System.out.println("* DEBUT SELECTION AORTE *");
+        System.out.println("*************************");
+        this.startSummIndex = startIndex;
+        this.endSummIndex = endIndex;
+
+        Roi roi = PatientSerieViewer.getRoi();
+        if (roi == null)
+             JOptionPane.showMessageDialog(null, "Aucune ROI dessinée.\nVeuillez tracer une ROI autour de l'aorte.");
+        else
+            this.startTEPSerie.selectAorta(roi, startSummIndex, endSummIndex);
     }
     
     /**
@@ -124,6 +130,14 @@ public class PatientMultiSeries {
         
         this.aortaResults = this.aortaResults.addResults(aortaResults.getResultsTable());
        
+    }
+    
+    public int getWidth() {
+        return this.startTEPSerie.getWidth();
+    }
+    
+    public int getHeight() {
+        return this.startTEPSerie.getHeight();
     }
 
     public void roiSelected(Roi roi) {

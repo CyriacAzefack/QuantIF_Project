@@ -4,6 +4,15 @@
  */
 package aa;
 
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.Roi;
+import ij.process.ImageProcessor;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author Cyriac
@@ -15,7 +24,24 @@ public class testDisplay extends javax.swing.JFrame {
      */
     public testDisplay() {
         initComponents();
+       
+        JButton b = new JButton("Try no focus dialog");
+        b.setSize(500, 100);
+        b.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Thread t = new Thread("test") {
+                    public void run() {
+                        JOptionPane.showMessageDialog(null, "Salut");
+                        
+                    }
+                };
+                t.start();
+            }
+        });
         
+        this.add(b);
         
     }
 
@@ -27,17 +53,6 @@ public class testDisplay extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-
-        popUpMenu = new javax.swing.JPopupMenu();
-        menu1 = new javax.swing.JMenuItem();
-        menu2 = new javax.swing.JMenuItem();
-
-        menu1.setText("Menu1");
-        popUpMenu.add(menu1);
-
-        menu2.setText("menu2");
-        menu2.setToolTipText("");
-        popUpMenu.add(menu2);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Test integration IJ");
@@ -62,9 +77,7 @@ public class testDisplay extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseReleased
-        if (evt.isPopupTrigger()) {
-            popUpMenu.show(this, evt.getX(), evt.getY());
-        }
+      
     }//GEN-LAST:event_formMouseReleased
 
     /**
@@ -97,8 +110,5 @@ public class testDisplay extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JMenuItem menu1;
-    private javax.swing.JMenuItem menu2;
-    private javax.swing.JPopupMenu popUpMenu;
     // End of variables declaration//GEN-END:variables
 }

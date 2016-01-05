@@ -17,7 +17,7 @@ import org.jfree.ui.RefineryUtilities;
 public class MathUtils {
     
     /**
-     * &intf(x)dx
+     *
      * Calcul l'aire sous la courbe de la fonction y = f(x).
      * En utilisant la méthode des trapèzes
      * @param x valeurs en abscisses
@@ -178,10 +178,10 @@ public class MathUtils {
     }
     
     /**
-     * Résoudre un système de 2 équations 2 inconnues : <br/>
-     * a<sub>1</sub>x + b<sub>1</sub>x  = c<sub>1</sub> <br/>
+     * <p>Résoudre un système de 2 équations 2 inconnues :</p> 
+     * <p>a<sub>1</sub>x + b<sub>1</sub>x  = c<sub>1</sub> </p>
 
-     * a<sub>2</sub>x + b<sub>2</sub>x  =c<sub>2</sub> <br/>
+     * <p>a<sub>2</sub>x + b<sub>2</sub>x  =c<sub>2</sub> </p>
      * 
 
      * @param a [a<sub>1</sub>, a<sub>2</sub>]

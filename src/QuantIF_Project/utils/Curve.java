@@ -17,6 +17,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RefineryUtilities;
 
 public class Curve extends ApplicationFrame {
     
@@ -25,7 +26,7 @@ public class Curve extends ApplicationFrame {
     private final XYSeriesCollection  dataset;
     private final XYLineAndShapeRenderer renderer;
     private JFreeChart xylineChart;
-    private String chartTitle;
+    private final String chartTitle;
     
     
     /**
@@ -49,7 +50,9 @@ public class Curve extends ApplicationFrame {
         this.chartTitle = chartTitle;
         addData(x, y, chartTitle);
         //draw(chartTitle);
-        
+        this.setVisible( true );
+        //On place la courbe au centre de l'écran
+        RefineryUtilities.centerFrameOnScreen(this);
         
         
        
@@ -75,7 +78,13 @@ public class Curve extends ApplicationFrame {
         
         return data;
    }
-    
+   
+    /**
+     * Ajoute des données 
+     * @param x Données en abscisse
+     * @param y Données en ordonnées
+     * @param title Titre des nouvelles données
+     */
    public final void addData(double[] x, double[] y, String title) {
         if(x.length != y.length)
             throw new IllegalArgumentException("Le tableau d'abscisses et d'ordonnées n'ont pas la même taille");

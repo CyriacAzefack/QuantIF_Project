@@ -4,19 +4,18 @@
  */
 package QuantIF_Project.process;
 
-import QuantIF_Project.gui.PatientSerieViewer;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.serie.TEPSerie;
 import QuantIF_Project.utils.DicomUtils;
 import QuantIF_Project.utils.MathUtils;
-import ij.IJ;
 import ij.ImagePlus;
-import ij.ImageStack;
+import ij.gui.Roi;
+import ij.measure.ResultsTable;
+import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.util.Tools;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +25,6 @@ import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 /**                   
  * Implémentation de la méthode de Hunter.
@@ -90,6 +88,8 @@ public class Hunter {
      */
     private final FloatProcessor[] khImages;
     
+    
+    
     /**
      * Images de la série
      */
@@ -118,7 +118,7 @@ public class Hunter {
      * <b>Cb(t) = A1*exp(-b1*t) + A2*exp(-b2*t) + A3*exp(-b3*t) </b>  
      * @param pms Acquisition multiple
      */
-    public Hunter(PatientMultiSeries pms, double takingValue, double takingTime)  {
+    public Hunter(PatientMultiSeries pms, double takingValue, double takingTime, boolean toDisplay)  {
         
         this.serie = pms.getEndDynSerie();
         
@@ -198,10 +198,10 @@ public class Hunter {
 
 
             buildKhImages();
-
-            displayAndSaveKhImages();
-            String dirPath = "tmp\\HunterImagesKh\\";
-            DicomUtils.saveImages(khImages, dirPath);
+            
+            if (toDisplay)
+                displayAndSaveKhImages();
+            
         }
         System.out.println("************FIN HUNTER*************");
     }
@@ -240,7 +240,7 @@ public class Hunter {
             subPanel.add(secondes);
             subPanel.add(new JLabel("s "));
             panel.add(subPanel);
-            panel.add(new JLabel("Entrez la valeur du prélèvement en MBq : "));
+            panel.add(new JLabel("Entrez la valeur du prélèvement en KBq/mL : "));
             panel.add(value);
         do {
             
@@ -347,23 +347,16 @@ public class Hunter {
     }
     
     /**
-     * On sauvegarde et on affiche les images des Ki
+     * On sauvegarde et on affiche les images des Kh
      */
     private void displayAndSaveKhImages() {
         
         
-        //On vide le dossier
-        
-        
-        BufferedImage[] buffs = new BufferedImage[khImages.length];
-        for (int i = 0; i < buffs.length; i++) {
-            buffs[i] = khImages[i].getBufferedImage();
-            
-        }
-        
+        DicomUtils.display(khImages, "Kh Images");
+        DicomUtils.saveImages(khImages, "tmp\\Hunter\\imagesKh\\");
        
         
-       PatientSerieViewer.setDisplayedImage(buffs, "Kh Images");
+     
        
       
       
@@ -379,5 +372,27 @@ public class Hunter {
      */
     public float getKh(int stackIndex, int x, int y) {
         return this.khImages[stackIndex].getPixelValue(x, y);
+    }
+    
+    /**
+     * On récupère la valeur moyenne de Kh dans la ROI
+     * @param imageIndex index de l'image
+     * @param roi Roi de Kh
+     * @return 
+     */
+    public double getKh(int imageIndex, Roi roi) {
+        double kh;
+        RoiManager rm = new RoiManager(true);
+        rm.addRoi(roi);
+        rm.select(0);
+        
+        ImagePlus imp = new ImagePlus("imageKh", khImages[imageIndex]);
+        System.out.println("Calcul Kh for ROI : " + roi);
+        
+        ResultsTable rt = rm.multiMeasure(imp);
+        
+        kh = rt.getColumnAsDoubles(1)[0];
+        
+        return kh;
     }
 }

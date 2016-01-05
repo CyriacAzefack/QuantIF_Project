@@ -4,11 +4,10 @@
  */
 package aa;
 
-import QuantIF_Project.patient.exceptions.BadParametersException;
-import QuantIF_Project.utils.MathUtils;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.text.DecimalFormat;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -22,15 +21,20 @@ public class test2 {
     */
     public static void main(String[] args) {
         
-        double[] a = {1, 2};
-        double[] b = {-3, 3};
-        double[] c = {6, 3};
         
-        try {
-            System.out.println(Arrays.toString(MathUtils.solveEquations(a, b, c)));
-        } catch (BadParametersException ex) {
-            Logger.getLogger(test2.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
+        float Ki = (float) 1.6644976333716384E-4;
+        float Vb = (float) 2.609357232864692;
+        BigDecimal bdKi = new BigDecimal(Ki);
+        bdKi = bdKi.round(new MathContext(4));
+        
+        BigDecimal bdVb = new BigDecimal(Vb);
+        bdVb = bdVb.round(new MathContext(4));
+        
+        
+        System.out.println("########## Ki = " + Ki + " #########");
+        System.out.println("########## Vb = " + Vb + " #########");
+        JOptionPane.showMessageDialog(null, "Ki = " +bdKi.floatValue()+"\nVb = " + bdVb.floatValue());
         
     }
 }

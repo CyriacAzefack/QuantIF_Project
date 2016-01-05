@@ -4,7 +4,7 @@
  */
 package QuantIF_Project.process;
 
-import QuantIF_Project.gui.PatientSerieViewer;
+import QuantIF_Project.gui.Main_Window;
 import QuantIF_Project.patient.AortaResults;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
@@ -12,14 +12,9 @@ import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.Serie;
 import QuantIF_Project.utils.DicomUtils;
 import QuantIF_Project.utils.MathUtils;
-import ij.IJ;
-import ij.ImagePlus;
-import ij.ImageStack;
 import ij.measure.CurveFitter;
 import ij.measure.ResultsTable;
 import ij.process.FloatProcessor;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,7 +68,11 @@ public class Patlak {
      */
     private int stackSize;
     
+    private boolean presenceTAP;
+    
     private final FloatProcessor[] kiImages;
+    
+    private final FloatProcessor[] vbImages;
     
     private static final double CB_MIN =  1E-10;
     
@@ -90,10 +89,14 @@ public class Patlak {
      */
     public Patlak(PatientMultiSeries patientMultiSeries) {
         
+        
+        Main_Window.addOutput("########### DEBUT PATLAK #########");
+        
         String aortaResultsPath = "tmp\\aortaResults";
         ResultsTable rt = ResultsTable.open2(aortaResultsPath+"\\resultsTable");
         patientMultiSeries.loadAortaResult(aortaResultsPath);
         this.series = new Serie[3];
+        presenceTAP = true;
         series[0] = patientMultiSeries.getStartDynSerie();
         series[1] = patientMultiSeries.getStaticSerie();
         series[2] = patientMultiSeries.getEndDynSerie();
@@ -101,6 +104,18 @@ public class Patlak {
         
         //Nombres de points placées sur Cb(t)
         nbTimePoints = rt.size();
+        
+        int nbFrames = series[0].getNbBlocks() + series[1].getNbBlocks() +
+                            series[2].getNbBlocks();
+        
+        
+        if (nbTimePoints < nbFrames) {
+            presenceTAP = false;
+            series[1] = null;
+             
+        }
+           
+        
         
         
         
@@ -125,14 +140,16 @@ public class Patlak {
         
         setBloodConcentrations(patientMultiSeries.getAortaResults());
         
+        //On calcules les aires sous la courbe
         setAreaUnderCurve();
         
         patientImages = new FloatProcessor[stackSize][nbTimePoints];
         kiImages = new FloatProcessor[stackSize];
+        vbImages = new FloatProcessor[stackSize];
         
         /*
          On vas essayer de construire une seule image de Ki/Vb
-         1- On doit récupérer pour chaque timePoint , la première image patient.
+         1- On doit récupérer pour chaque timePoint , les images patient correspondant à la frame
          2- Pour chaque pixel, on récupère la valeur du pixel (correspond à FDG(t))
             pour chaque timePoints
          3- On calcule les coordonnées {FDG(t)/Cb(t), AUC(t)/Cb(t)} correspondantes
@@ -146,10 +163,22 @@ public class Patlak {
             patientImages[stackIndex] = getPatientImages(stackIndex);
         
         // On calcule l'image des Ki pour chaque coupe spaciale
-        for (int stackIndex = 0; stackIndex < stackSize; stackIndex ++) 
-            kiImages[stackIndex] = buidKiImage(stackIndex);
+        for (int stackIndex = 0; stackIndex < stackSize; stackIndex ++) {
+            FloatProcessor[] kivb = buidKiAndVbImage(stackIndex);
+            kiImages[stackIndex] = kivb[0];
+            vbImages[stackIndex] = kivb[1];
+        }    
         
-        displayAndSaveKiImages();
+        //On affiche les images Ki
+        Main_Window.addOutput("Affichage Images Ki");
+        DicomUtils.display(kiImages, "Ki Images PATLAK");
+        
+        //On sauvegarde les images Ki & Vb
+        DicomUtils.saveImages(kiImages, "tmp\\Patlak\\imagesKi\\");
+        DicomUtils.saveImages(vbImages, "tmp\\Patlak\\imagesVb\\");
+        
+        
+        Main_Window.addOutput("########### FIN PATLAK #########");
         
     }
     
@@ -225,10 +254,10 @@ public class Patlak {
     }
     
     /**
-     * On construit l'image Ki
+     * On construit l'image Ki et Vb
      * @return 
      */
-    private FloatProcessor buidKiImage(int stackIndex) {
+    private FloatProcessor[] buidKiAndVbImage(int stackIndex) {
         
         /*
          2- Pour chaque pixel, on récupère la valeur du pixel (correspond à FDG(t))
@@ -248,23 +277,20 @@ public class Patlak {
         float[] vbArray = new float[width*height];
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                //System.out.println("***** NEW PIXEL ***** ");
+                
                 //Pour chaque pixel, on doit avoir l'ensembles des abscices et des ordonnées
                 //  pour la régression linéaire
                 double[] xArray = new double[nbTimePoints];
                 double[] yArray = new double[nbTimePoints];
                 
-                /**
-                 * Vaut true si ts les valeurs de fdg sont nulles
-                 */
-                boolean nullFDG = true;
+               
                 //Pour chaque valeur de timeIndex, on calcule les coordonées {FDG(t)/Cb(t), AUC(t)/Cb(t)}
                 for (int timeIndex = 0; timeIndex < nbTimePoints; timeIndex++) {
-                    double fdg = patientImages[stackIndex][timeIndex].getPixelValue(x, y);
-                    //System.out.println(timeIndex);
+                    double fdg = patientImages[stackIndex][timeIndex].getf(x, y);
+                   
                     yArray[timeIndex] = fdg/Cb[timeIndex];
                     xArray[timeIndex] = AUC[timeIndex]/Cb[timeIndex];
-                    //System.out.println("X : " + xArray[timeIndex] + "\nY : " + yArray[timeIndex]);
+                    
                 }
                 
                 
@@ -280,66 +306,34 @@ public class Patlak {
                 vbArray[y*width + x] = (float) linRegr.getParams()[0];
                 
                
-                /*
-                if (x==102 && y==78 && stackIndex >= 45 && stackIndex <= 50) {
-                    Curve c = new Curve("Linear Regression" , "R2 = " + linRegr.getRSquared() 
-                            + " & stackIndex ="+ stackIndex, "AUC(t)/Cb(t)", 
-                            "FDG(t)/Cb(t)", xArray, yArray);
-                    double[] droite = new double[xArray.length];
-                    for (int i = 0; i < xArray.length; i++) {
-                        droite[i] = linRegr.f(xArray[i]);
-                    }
-                    c.addData(xArray, droite, "droite");
-                    c.setVisible( true );
-                    //On place la courbe au centre de l'écran
-                    RefineryUtilities.centerFrameOnScreen(c);
-                    System.out.println(linRegr.getResultString());
-                }
                 
-                /*
-                if (vbArray[y*width + x] == 0) {
-                    System.out.println("Vb max val");
-                }
-                */
-                
-                //Affichage Ki/Vb
-                /*
-                System.out.println("Ki : " + kiArray[x][y]);
-                System.out.println("Vb : " + vbArray[x][y]);
-                */
             }
         }
         
-        /*
-        System.out.println("****************************");
-        System.out.println("Nombre d'erreurs : " + nbErrors);
-        System.out.println("****************************");
-        */
+        
         FloatProcessor kiProc = new FloatProcessor(width, height, kiArray);
-        //ImagePlus impKi = new ImagePlus("Ki Image", kiProc);
-        //impKi.show();
-        
+                
         FloatProcessor vbProc = new FloatProcessor(width, height, vbArray);
-        //ImagePlus impVb = new ImagePlus("Vb Image", vbProc);
-        //impVb.show();
+       
         
+        FloatProcessor[] kivb = {kiProc, vbProc};
         
-        return kiProc;
+        return kivb;
     }
     
     /**
-     * Recupère les images patient sous forme de ImageProcessor
+     * Recupère les images patient de dyamique tardive....... sous forme de ImageProcessor
      * @return 
      */
     private FloatProcessor[] getPatientImages(int stackIndex)  {
         FloatProcessor[] imagesProc = new FloatProcessor[nbTimePoints];
         int currentTimeIndex = 0;
         //On parcourt les séries
-        for (Serie serie : series) {
-            
+        Serie serie = series[2];
+        if (serie != null) {
             for (int timeIndex = 0; timeIndex < serie.getNbBlocks(); timeIndex++) {
                 if (currentTimeIndex < nbTimePoints) {
-                    
+
                     try {
                         DicomImage dcm = serie.getBlock(timeIndex).getDicomImage(stackIndex);
                         if (dcm == null)
@@ -351,10 +345,11 @@ public class Patlak {
                     } catch (BadParametersException ex) {
                         Logger.getLogger(Patlak.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    
+
                 }
             }
         }
+        
         
         //Affichage images patient
         /*
@@ -370,34 +365,7 @@ public class Patlak {
         return imagesProc;
     }
     
-    /**
-     * On sauvegarde et on affiche les images des Ki
-     */
-    private void displayAndSaveKiImages() {
-        String dirPath = "tmp\\imagesKi";
-        File file = new File(dirPath);
-        //On vide le dossier
-        DicomUtils.emptyDirectory(file);
-        ImagePlus imp;
-        ImageStack is = new ImageStack(width, height);
-        BufferedImage[] buffs = new BufferedImage[kiImages.length];
-        for (int i = 0; i < buffs.length; i++) {
-            buffs[i] = kiImages[i].getBufferedImage();
-            is.addSlice(kiImages[i]);
-            imp = new ImagePlus("image "+i, kiImages[i]);
-            //On sauvegarde les images ki
-            IJ.save(imp, file.getAbsolutePath()+"\\IM"+i);
-        }
-        
-        System.out.println("Images des Ki sauvegardées dans le dossier \"" 
-                + file.getAbsolutePath() + "\"");
-        
-       PatientSerieViewer.setDisplayedImage(buffs, "Ki Images");
-       
-      
-      
-       
-    }
+    
 
     
 }
