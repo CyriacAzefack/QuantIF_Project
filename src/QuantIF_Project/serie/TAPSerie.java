@@ -497,7 +497,7 @@ public class TAPSerie implements Serie{
     }
     
     public BufferedImage[] getStartTEPSerieSummAll() {
-        return this.startTEPSerie.getSummALL();
+        return this.startTEPSerie.getBuffSummALL();
     }
     
     public BufferedImage[] getAllImages() {

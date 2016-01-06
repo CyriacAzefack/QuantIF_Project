@@ -624,9 +624,17 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
             int s2 = this.summ2.getSelectedIndex();
             float[][] imagePixels = patient.summSlices(s1, s2); 
             currentImageTitle = "Somme de la frame " + (s1 + 1) + " à " + (s2 + 1);
-            for (int frame = 0; frame < this.imagesPerBlock; frame++) {
-                  displayedImages[frame] = DicomUtils.pixelsToBufferedImage(patient.getWidth(), patient.getHeight(), imagePixels[frame]);
+            
+            
+            for (int image = 0; image < this.imagesPerBlock; image++) {
+                FloatProcessor fp = new FloatProcessor(width, height, imagePixels[image]);
+                displayedImages[image] = fp.getBufferedImage();
             }
+            
+            Main_Window.println(currentImageTitle);
+            
+            
+            
         }
         else {
             try {
@@ -666,18 +674,21 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         patient = patientMultiSeries.getStartDynSerie();
         updateComponents();
         display(currentImageID);
+        Main_Window.println("Affichage de la série dynamique de depart");
     }//GEN-LAST:event_radioButtonDyn1ActionPerformed
 
     private void radioButtonStatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonStatActionPerformed
         patient = patientMultiSeries.getStaticSerie();
         updateComponents();
         display(currentImageID);
+        Main_Window.println("Affichage de la série statique TAP");
     }//GEN-LAST:event_radioButtonStatActionPerformed
 
     private void radioButtonDyn2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonDyn2ActionPerformed
         patient = patientMultiSeries.getEndDynSerie();
         updateComponents();
         display(currentImageID);
+        Main_Window.println("Affichage de la série dynamique de fin");
     }//GEN-LAST:event_radioButtonDyn2ActionPerformed
 
     private void radioButtonDyn1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_radioButtonDyn1StateChanged
@@ -729,6 +740,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         };
         thread.start();
         
+        Main_Window.println("Affichage 3D de \""+ currentImageTitle +"\"");
          
     }//GEN-LAST:event_tridimObsButtonActionPerformed
 
@@ -777,7 +789,11 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
             popUpMenu.show(this, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_imagePanelMouseReleased
-
+    
+    /**
+     * Sauvegarde des images affichées
+     * @param evt 
+     */
     private void saveImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveImagesActionPerformed
         FloatProcessor[] fps = new FloatProcessor[displayedImages.length];
         BufferedImage b;
@@ -1065,7 +1081,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     public static void setDisplayedImage(BufferedImage[] buffs, String title) {
         displayedImages = buffs;
         currentImageID = 0;
-         display(currentImageID);
+        display(currentImageID);
         
         imageSlider.setMaximum(buffs.length);
         imageSlider.setValue(1);
@@ -1135,19 +1151,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     // End of variables declaration//GEN-END:variables
 
     
-    public void setContinueButton(ActionListener al) {
-       continueButton.setVisible(true);
-       continueButton.setEnabled(true);
-       
-       continueButton.addActionListener(al);
-    }
-
-    public void removeContinueButton() {
-        continueButton.setVisible(false);
-        continueButton.setEnabled(false);
-        
-        this.revalidate();
-    }
+    
     
   
 

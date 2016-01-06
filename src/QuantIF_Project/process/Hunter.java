@@ -4,6 +4,7 @@
  */
 package QuantIF_Project.process;
 
+import QuantIF_Project.gui.PatientSerieViewer;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.serie.TEPSerie;
@@ -180,8 +181,10 @@ public class Hunter {
         this.takingTime = 0;
         this.takingValue = 0;
         //on recupere les valeurs de prélèvement tardif
-        if (takingValue == 0 && takingTime == 0)
+        if (takingValue == 0 && takingTime == 0) {
             getLateTaking(pms);
+            //setDefaultTaking(pms);
+        }
         else {
             this.takingValue = takingValue;
             this.takingTime = takingTime;
@@ -203,6 +206,9 @@ public class Hunter {
                 displayAndSaveKhImages();
             
         }
+        
+        
+        
         System.out.println("************FIN HUNTER*************");
     }
     
@@ -285,7 +291,7 @@ public class Hunter {
             float[] khArray = new float[width * height];
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    double fdg = patientImages[imageIndex].getPixelValue(x, y);
+                    double fdg = patientImages[imageIndex].getf(x, y);
                     khArray[y*width + x] = (float) (fdg/integral);
                     
                 }
@@ -336,7 +342,7 @@ public class Hunter {
      * On récupère les images de la série 
      */
     private void getPatientImages() {
-        BufferedImage[] summALL = serie.getSummALL();
+        BufferedImage[] summALL = serie.getBuffSummALL();
         
         for (int i = 0; i < patientImages.length; i++) {
             float[] fArray  = new float[width*height];
@@ -394,5 +400,17 @@ public class Hunter {
         kh = rt.getColumnAsDoubles(1)[0];
         
         return kh;
+    }
+
+    private void setDefaultTaking(PatientMultiSeries pms) {
+        String timeStr = "090100.000000"; //On ajotue les fractions de secondes pour avoir le format dicom
+        TEPSerie startDyn = pms.getStartDynSerie();
+
+        this.takingTime = DicomUtils.getMinutesBetweenDicomDates(startDyn.getSeriesTime(), timeStr);    
+        this.takingValue = 10000;
+        System.out.println("Temps après l'injection = " + (int)takingTime + " min");
+
+
+        System.out.println("Concentration prélévée = " + takingValue + "MBq");
     }
 }

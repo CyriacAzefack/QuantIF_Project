@@ -47,7 +47,7 @@ import javax.swing.JButton;
  */
 public class TEPSerie implements Serie{
 	/**
-	 * Nom anonymis� du patient
+	 * Nom anonymisé du patient
 	 */
 	protected String name;
 	
@@ -541,12 +541,9 @@ public class TEPSerie implements Serie{
         FloatProcessor imgProc;
         ImagePlus summAll;
         float[][] summSlices;
-        if (roi == null) {
-            summSlices = this.summSlices(startIndex, endIndex);
-        }
-        else {
-            summSlices = this.summALL;
-        }
+      
+        summSlices = this.summALL;
+        
         
 
         
@@ -868,7 +865,7 @@ public class TEPSerie implements Serie{
         return DicomUtils.dicomDateToDate(this.serieStartDate);
     }
     
-    public BufferedImage[] getSummALL() {
+    public BufferedImage[] getBuffSummALL() {
         BufferedImage[] buffs = new BufferedImage[this.summALL.length];
         FloatProcessor fp;
         for (int i = 0; i < buffs.length; i++) {
@@ -878,6 +875,18 @@ public class TEPSerie implements Serie{
         }
         
         return buffs;
+    }
+    
+    public FloatProcessor[] getSummALL() {
+        FloatProcessor[] fps = new FloatProcessor[this.summALL.length];
+        FloatProcessor fp;
+        for (int i = 0; i < fps.length; i++) {
+            float[] pixels = summALL[i];
+            fp = new FloatProcessor(width, height, pixels);
+            fps[i] = fp;
+        }
+        
+        return fps;
     }
     
     /**

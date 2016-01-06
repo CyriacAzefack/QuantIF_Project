@@ -10,6 +10,7 @@ import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.Serie;
+import QuantIF_Project.utils.Curve;
 import QuantIF_Project.utils.DicomUtils;
 import QuantIF_Project.utils.MathUtils;
 import ij.measure.CurveFitter;
@@ -44,9 +45,14 @@ public class Patlak {
     
     
     /**
-     * Nombres de points temporels dans l'acquisition totale
+     * Nombres de points temporels dans la dynamique tardive
      */
     private int nbTimePoints;
+    
+    /**
+     * Nombre de points temporels dans les données de segmentatation d'aorte
+     */
+    private int dataAortaSize;
     
     /**
      * Valeurs des time Points en minutes
@@ -68,7 +74,7 @@ public class Patlak {
      */
     private int stackSize;
     
-    private boolean presenceTAP;
+  
     
     private final FloatProcessor[] kiImages;
     
@@ -90,30 +96,29 @@ public class Patlak {
     public Patlak(PatientMultiSeries patientMultiSeries) {
         
         
-        Main_Window.addOutput("########### DEBUT PATLAK #########");
+        
+        
         
         String aortaResultsPath = "tmp\\aortaResults";
         ResultsTable rt = ResultsTable.open2(aortaResultsPath+"\\resultsTable");
+        
         patientMultiSeries.loadAortaResult(aortaResultsPath);
+        
+        Main_Window.println("Données de segmentation d'aorte chargées de \"" + aortaResultsPath + "\"");
+        
         this.series = new Serie[3];
-        presenceTAP = true;
+        
         series[0] = patientMultiSeries.getStartDynSerie();
         series[1] = patientMultiSeries.getStaticSerie();
         series[2] = patientMultiSeries.getEndDynSerie();
         
         
         //Nombres de points placées sur Cb(t)
-        nbTimePoints = rt.size();
+        dataAortaSize = rt.size();
         
-        int nbFrames = series[0].getNbBlocks() + series[1].getNbBlocks() +
-                            series[2].getNbBlocks();
+        nbTimePoints = series[2].getNbBlocks();
         
-        
-        if (nbTimePoints < nbFrames) {
-            presenceTAP = false;
-            series[1] = null;
-             
-        }
+       
            
         
         
@@ -130,11 +135,11 @@ public class Patlak {
         this.height = series[0].getHeight();
         
         //On initialise les tableaux de concentration et d'aire sous la courbe
-        Cb = new double[nbTimePoints];
+        Cb = new double[dataAortaSize];
         
-        AUC = new double[nbTimePoints];
+        AUC = new double[dataAortaSize];
         
-        timeArray = new double[nbTimePoints];
+        timeArray = new double[dataAortaSize];
         
         //On les remplit à l'aide des résultats lié à la segmentation de l'aorte
         
@@ -170,7 +175,7 @@ public class Patlak {
         }    
         
         //On affiche les images Ki
-        Main_Window.addOutput("Affichage Images Ki");
+        Main_Window.print("Affichage Images Ki");
         DicomUtils.display(kiImages, "Ki Images PATLAK");
         
         //On sauvegarde les images Ki & Vb
@@ -178,12 +183,12 @@ public class Patlak {
         DicomUtils.saveImages(vbImages, "tmp\\Patlak\\imagesVb\\");
         
         
-        Main_Window.addOutput("########### FIN PATLAK #########");
+      
         
     }
     
     /**
-     * Renvoie le tableau de concentrations sanguines après le fit.
+     * Récupère le tableau de concentrations sanguines après le fit.
      * On fait le fit sur la série dynamique de départ (plus la série statique si présente) 
      * et on garde les valeurs de la série dynamique de fin
      * @param aortaResults résultats d'aorte de la multi-acquisition
@@ -239,7 +244,7 @@ public class Patlak {
         
        
         
-        for (int timeIndex = 0; timeIndex < nbTimePoints; timeIndex++) {
+        for (int timeIndex = 0; timeIndex < dataAortaSize; timeIndex++) {
             double[] xVals = Arrays.copyOfRange(timeArray, 0, timeIndex+1);
             double[] yVals = Arrays.copyOfRange(Cb, 0, timeIndex+1);
             
@@ -261,7 +266,7 @@ public class Patlak {
         
         /*
          2- Pour chaque pixel, on récupère la valeur du pixel (correspond à FDG(t))
-            pour chaque timePoints
+            pour chaque timePoints de la dyn tardive
          3- On calcule les coordonnées {FDG(t)/Cb(t), AUC(t)/Cb(t)} correspondantes
             ce qui nous donne nbTimePoints points à placer.
          4- On fait une régression linéaire à l'aide des points et on trouve les paramètres Ki/Vb
@@ -270,9 +275,7 @@ public class Patlak {
         
         //System.out.println("On Construit les images Ki et Vb pour le stackIndex " + (stackIndex+1));
         boolean first = true;
-        
-        int nbErrors = 0;
-                
+               
         float[] kiArray = new float[width*height];
         float[] vbArray = new float[width*height];
         for (int x = 0; x < width; x++) {
@@ -287,9 +290,9 @@ public class Patlak {
                 //Pour chaque valeur de timeIndex, on calcule les coordonées {FDG(t)/Cb(t), AUC(t)/Cb(t)}
                 for (int timeIndex = 0; timeIndex < nbTimePoints; timeIndex++) {
                     double fdg = patientImages[stackIndex][timeIndex].getf(x, y);
-                   
-                    yArray[timeIndex] = fdg/Cb[timeIndex];
-                    xArray[timeIndex] = AUC[timeIndex]/Cb[timeIndex];
+                    
+                    yArray[timeIndex] = fdg/Cb[dataAortaSize - nbTimePoints + timeIndex];
+                    xArray[timeIndex] = AUC[dataAortaSize - nbTimePoints + timeIndex]/Cb[dataAortaSize - nbTimePoints + timeIndex];
                     
                 }
                 
@@ -299,8 +302,10 @@ public class Patlak {
                 
                 CurveFitter linRegr = new CurveFitter(xArray, yArray);
                 linRegr.doFit(CurveFitter.STRAIGHT_LINE);
-                
-        
+                if (x == 100 && y == 80 && stackIndex == 41) {
+                    System.out.println("Fit linéaire :" + linRegr.getResultString());
+                    Curve chart = new Curve("RegressionLinéaire", "Image "+(stackIndex+1), "x", "y", xArray, yArray);
+                }
                 
                 kiArray[y*width + x] = (float) linRegr.getParams()[1];
                 vbArray[y*width + x] = (float) linRegr.getParams()[0];
@@ -322,7 +327,7 @@ public class Patlak {
     }
     
     /**
-     * Recupère les images patient de dyamique tardive....... sous forme de ImageProcessor
+     * Recupère les images patient de dynamique tardive....... sous forme de ImageProcessor
      * @return 
      */
     private FloatProcessor[] getPatientImages(int stackIndex)  {
@@ -330,25 +335,25 @@ public class Patlak {
         int currentTimeIndex = 0;
         //On parcourt les séries
         Serie serie = series[2];
-        if (serie != null) {
-            for (int timeIndex = 0; timeIndex < serie.getNbBlocks(); timeIndex++) {
-                if (currentTimeIndex < nbTimePoints) {
+        
+        for (int timeIndex = 0; timeIndex < serie.getNbBlocks(); timeIndex++) {
+            if (currentTimeIndex < nbTimePoints) {
 
-                    try {
-                        DicomImage dcm = serie.getBlock(timeIndex).getDicomImage(stackIndex);
-                        if (dcm == null)
-                            imagesProc[currentTimeIndex] = new FloatProcessor(width, height);
-                        else {
-                            imagesProc[currentTimeIndex] = dcm.getImageProcessor();
-                        }
-                        currentTimeIndex++;
-                    } catch (BadParametersException ex) {
-                        Logger.getLogger(Patlak.class.getName()).log(Level.SEVERE, null, ex);
+                try {
+                    DicomImage dcm = serie.getBlock(timeIndex).getDicomImage(stackIndex);
+                    if (dcm == null)
+                        imagesProc[currentTimeIndex] = new FloatProcessor(width, height);
+                    else {
+                        imagesProc[currentTimeIndex] = dcm.getImageProcessor();
                     }
-
+                    currentTimeIndex++;
+                } catch (BadParametersException ex) {
+                    Logger.getLogger(Patlak.class.getName()).log(Level.SEVERE, null, ex);
                 }
+
             }
         }
+        
         
         
         //Affichage images patient

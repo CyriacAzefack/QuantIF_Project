@@ -69,26 +69,26 @@ public class MathUtils {
         
         double[][] datatoFit = {Arrays.copyOfRange(data[0], symetryIndex, data[0].length), Arrays.copyOfRange(data[1], symetryIndex, data[1].length)};
         
-        CurveFitter endFitter = new CurveFitter(datatoFit[0], datatoFit[1]);
+        CurveFitter fitter = new CurveFitter(datatoFit[0], datatoFit[1]);
         /*
         double[] initialParameters = new double[2];
         String formula = "y = a*exp(-b*x)";
         int doCustomFit = endFitter.doCustomFit(formula, initialParameters, true);
         System.out.println("Custom fit = " + doCustomFit);
         */
-        endFitter.doFit(CurveFitter.EXPONENTIAL);
+        fitter.doFit(CurveFitter.EXPONENTIAL);
         
         double[][] decayResults = new double[2][datatoFit[0].length];
-        decayResults[0] = endFitter.getXPoints();
+        decayResults[0] = fitter.getXPoints();
         
         for (int i = 0; i < decayResults[0].length; i++)
-            decayResults[1][i] = endFitter.f(decayResults[0][i]);
+            decayResults[1][i] = fitter.f(decayResults[0][i]);
         
         double[][] risingResults = new double[2][symetryIndex+1];
         
         for (int i = 0; i < risingResults[0].length; i++) {
             risingResults[0][i] = data[0][i];
-            risingResults[1][i] = endFitter.f(2*data[0][symetryIndex] - data[0][i]);
+            risingResults[1][i] = fitter.f(2*data[0][symetryIndex] - data[0][i]);
         }
         
         
@@ -100,9 +100,9 @@ public class MathUtils {
         
         
         System.out.println("########################################");
-        System.out.println("Fit fin de courbe: " +  endFitter.getResultString());
+        System.out.println("Fit de courbe: " +  fitter.getResultString());
         System.out.println("########################################");
-        Curve chart = new Curve("Fit courbe","R2 = " + endFitter.getRSquared(), "Temps",  "data", data[0], data[1]);
+        Curve chart = new Curve("Fit courbe","R2 = " + fitter.getRSquared(), "Temps",  "data", data[0], data[1]);
         
         chart.addData(data[0], result, "fin courbe", Color.YELLOW, 4.0f);
         /*
@@ -111,15 +111,7 @@ public class MathUtils {
         chart.setVisible( true );
         RefineryUtilities.centerFrameOnScreen(chart);
         
-        
-        
-        
-        
-        
-        
-        
         return result;
-        
     }    
     
     /**

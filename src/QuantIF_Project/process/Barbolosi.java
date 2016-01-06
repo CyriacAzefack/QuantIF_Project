@@ -13,14 +13,13 @@ import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.TEPSerie;
 import QuantIF_Project.utils.DicomUtils;
 import QuantIF_Project.utils.MathUtils;
-import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Roi;
-import ij.measure.ResultsTable;
-import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.util.ArrayUtil;
 import ij.util.Tools;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -106,10 +105,7 @@ public class Barbolosi {
     private final static double SIGMA_CB = 0.02;
     
     
-    /**
-     * Roi autour du max pour chaque prélèvement
-     */
-    private Roi[] roiTumor;
+   
     
     /**
      * Roi de recherche pour le MAX
@@ -121,6 +117,10 @@ public class Barbolosi {
      */
     private int startX, endX, startY, endY;
     
+    /**
+     * Position du pixel max {x, y, z}
+     */
+    private int[] pixelMax;
     
     private PatientMultiSeries pms;
     
@@ -151,7 +151,7 @@ public class Barbolosi {
     
     private Object lock;
     
-    private Thread[] waitingROITumorThreads;
+    
     
     
     
@@ -184,9 +184,9 @@ public class Barbolosi {
         nearestTimeFrameIndexes = new int[NB_TAKINGS];
         cancelled = false;
         
-        roiTumor = new Roi[NB_TAKINGS];
         
-        waitingROITumorThreads = new Thread[NB_TAKINGS];
+        
+        
         
         patientImages = new FloatProcessor[nbFrames][stackSize];
         Ki = 0;
@@ -212,6 +212,11 @@ public class Barbolosi {
             
             if (showConfirmDialog != JOptionPane.YES_OPTION)
                 cancelled = true;
+            
+            startX = roiSearch.getPolygon().xpoints[0];
+            endX = roiSearch.getPolygon().xpoints[1];
+            startY = roiSearch.getPolygon().ypoints[0];
+            endY = roiSearch.getPolygon().xpoints[2];
         }
         
         //Tirages aléatoires des valeurs de fdg sur les images
@@ -219,6 +224,8 @@ public class Barbolosi {
         System.out.println("X ["+startX+" "+endX+"]");
         System.out.println("Y ["+startY+" "+endY+"]");
         System.out.println("Width : " + (endX - startX) +" Height : " + (endY-startY));
+        
+        findPixelMax();
         
         getEndSerieImages();
         
@@ -230,78 +237,66 @@ public class Barbolosi {
         
         
         if (!cancelled) {
-            Main_Window.addOutput("Lancement de la méthode de BARBOLOSI");
+            
             //On fait un hunter avec le premier prélèvement
             hunter = new Hunter(pms, Cbi[0], times[0], false);
             
             
             setAreaUnderCurve();
             //Pour chaque prélèvement
-            Thread barbolosi = new Thread () {
-                public void run() {
-               
-                    for (int takingIndex = 0; takingIndex < NB_TAKINGS; takingIndex++) {
-
-                        //On cherche la frame la plus proche
-                        System.out.println("************ PRELEVEMENT N°"+takingIndex+" *************");
-                        int frameIndex = findNearestTimeFrameIndex(times[takingIndex]);
-                        nearestTimeFrameIndexes[takingIndex] = frameIndex;
-                        System.out.println("Taking N°"+ (takingIndex+1)+" -> "
-                                + "Nearest Time Frame Index  = " 
-                                + (nearestTimeFrameIndexes[takingIndex] + 1));
-
-                        //On cherche l'image ayant le max sur cette frame
-                        //  En restant dans la ROI de recherche
-                        int[] maxResults = findMax(frameIndex);
-
-                        int maxImageIndex = maxResults[0];
-
-                        if (takingIndex == 0)
-                            Kh = hunter.getKh(maxImageIndex, roiSearch);
-                        
-                        System.out.println("Kh Hunter : " + Kh);
-
-
-                        System.out.println("Index de l'image ayant le MAX : " + (maxImageIndex+1) +" à ["+maxResults[1]+"  "+maxResults[2]+"]");
-
-                        FloatProcessor[] trioImages = new FloatProcessor[3]; //le trio des images -1 0 +1
-
-                        for (int i = 0; i < 3; i++) {
-                            trioImages[i] = patientImages[frameIndex][maxImageIndex + i - 1];
-                        }
-
-                        ImageStack is = new ImageStack(width, height);
-                        for (int i = 0; i < 3; i++)
-                            is.addSlice(trioImages[i]);
-
-                        ImagePlus trioImp = new ImagePlus("", is);
-
-                        System.out.println("Trio d'images récupéré!");
-
-                        //On récupère la ROI déssinée par l'utilisateur
-
-                        DicomUtils.display(trioImages, "Images "+(maxImageIndex-1)+" - " + maxImageIndex + " - " + (maxImageIndex+1)+ " / " + stackSize);
-
-                        System.out.println("Acquisition de la ROI Tumorale");
-
-
-                        setRoiTumor(takingIndex, trioImp);
-                        
-                        try {
-                            waitingROITumorThreads[takingIndex].join();
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(Barbolosi.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                        
-
-                    }
-                    
-                    getKiAndVb();
-                 
-                }
-            };
             
-            barbolosi.start();
+               
+            for (int takingIndex = 0; takingIndex < NB_TAKINGS; takingIndex++) {
+
+                //On cherche la frame la plus proche
+                System.out.println("************ PRELEVEMENT N°"+takingIndex+" *************");
+                int frameIndex = findNearestTimeFrameIndex(times[takingIndex]);
+                nearestTimeFrameIndexes[takingIndex] = frameIndex;
+                System.out.println("Taking N°"+ (takingIndex+1)+" -> "
+                        + "Nearest Time Frame Index  = " 
+                        + (nearestTimeFrameIndexes[takingIndex] + 1));
+
+                //On cherche l'image ayant le max sur cette frame
+                //  En restant dans la ROI de recherche
+
+
+
+                if (takingIndex == 0)
+                    Kh = hunter.getKh(pixelMax[2], roiSearch);
+
+                System.out.println("Kh Hunter : " + Kh);
+
+
+
+
+                FloatProcessor[] trioImages = new FloatProcessor[3]; //le trio des images -1 0 +1
+
+                for (int i = 0; i < 3; i++) {
+                    trioImages[i] = patientImages[frameIndex][pixelMax[2] + i - 1];
+                }
+
+                ImageStack is = new ImageStack(width, height);
+                for (int i = 0; i < 3; i++)
+                    is.addSlice(trioImages[i]);
+
+
+
+                System.out.println("Trio d'images récupéré!");
+
+                //On récupère la ROI déssinée par l'utilisateur
+
+
+
+                System.out.println("Acquisition de la ROI Tumorale");
+
+                getMeanAndSigmaFDGTumor(takingIndex, trioImages);
+
+            }
+
+            compileKiAndVb();
+                 
+             
+           
             
             
             
@@ -490,11 +485,11 @@ public class Barbolosi {
     /**
      * Recherche la valeur du pixel max dans une frame
      * @param frameIndex indice de la frame
-     * @return [imageIndex, xPixel, yPixel]
+     * @return [xPixel, yPixel, imageIndex]
      */
     
-    private int[] findMax(int frameIndex) {
-       FloatProcessor[] frameImages = patientImages[frameIndex];
+    private int[] findMax(FloatProcessor[] frameImages) {
+       
        
        double max = Double.NEGATIVE_INFINITY;
        
@@ -522,7 +517,7 @@ public class Barbolosi {
         
         int[] pixelPosition = getPixelPosition(fpCrop, max);
         
-        int[] result = {imageIndex, pixelPosition[0]+startX, pixelPosition[1]+startY};
+        int[] result = {pixelPosition[0]+startX, pixelPosition[1]+startY, imageIndex};
         
         return result;
     }
@@ -561,37 +556,10 @@ public class Barbolosi {
         
     }
     
-    /**
-     * L'utilisateur dessine une ROI autour de la tumeur
-     */
-    private void setRoiTumor(int takingIndex, ImagePlus trioImp) {
-        
-       
-        
-        
-        
-        
-        
-        getMeanAndSigmaFDGTumor(takingIndex, trioImp);
-        
-        
-        
-        
-       
-        
-        
-        
-        
-        
-        waitingROITumorThreads[takingIndex].start();
-        System.out.println("Thread d'attente débuté!!");
-       
-        
-        
-    }
+    
     
     /**
-     * Fonction f(x,y)
+     * Fonction f(x,y) à minimiser
      * @param drawingIndex
      * @param FDG
      * @param x
@@ -607,27 +575,26 @@ public class Barbolosi {
         
         return result;
     }
-
-    private void getMeanAndSigmaFDGTumor(int takingIndex, ImagePlus trioImp) {
-        trioImp.setRoi(roiTumor[takingIndex]);
-        
-        
-        RoiManager rm = new RoiManager(true);
-        rm.addRoi(roiTumor[takingIndex]);
-        rm.select(0);
-        ResultsTable rt = rm.multiMeasure(trioImp);
+    
+    
+    /**
+     * Calcule de la moyenne et de l'écart-type des trois images
+     * @param takingIndex Indice du prélèvement
+     * @param trioImages Images autour de l'image contenant le pixelMax
+     */
+    private void getMeanAndSigmaFDGTumor(int takingIndex, FloatProcessor[] trioImages) {
         
 
         //On calcule la moyenne sur les 3 max
         for (int i = 0; i < 3; i++) {
             //La colonne 3 correspond à la valeur max de la ROI
-            meanFDGTumor[takingIndex] += rt.getColumnAsDoubles(3)[i]/3;
+            meanFDGTumor[takingIndex] += trioImages[i].getf(pixelMax[0], pixelMax[1])/3;
         }
 
         //On calcule l'écart-type
         double variance = 0;
         for (int i = 0; i < 3; i++) {
-            double max  = rt.getColumnAsDoubles(3)[i];
+            double max  = trioImages[i].getf(pixelMax[0], pixelMax[1]);
             variance += Math.pow(max - meanFDGTumor[takingIndex], 2)/3;
         }
 
@@ -635,8 +602,11 @@ public class Barbolosi {
         
         System.out.println("Mean FDG = " + meanFDGTumor[takingIndex] + "\nSigma FDG = " + sigmaFDGTumor[takingIndex]);
     }
-
-    private void getKiAndVb() {
+    
+    /**
+     * On calcule Ki et Vb
+     */
+    private void compileKiAndVb() {
         //On fait les tirages aléatoires
         double[] aj = new double[NB_TAKINGS]; //Aires sous la courbes pour les différents temps de prélèvement
         double[] bj = new double[NB_TAKINGS]; //Valeurs de Cp(tj)
@@ -724,22 +694,49 @@ public class Barbolosi {
         }
         
         //On défini les 3 chiffres significatifs après la virgule
-        /*
+        
         BigDecimal bdKi = new BigDecimal(Ki);
         bdKi = bdKi.round(new MathContext(4));
         
         BigDecimal bdVb = new BigDecimal(Vb);
         bdVb = bdVb.round(new MathContext(4));
         
-        */
+        Ki = bdKi.doubleValue();
+        Vb = bdVb.doubleValue();
         System.out.println("########## Ki = " + Ki + " #########");
         System.out.println("########## Vb = " + Vb + " #########");
         
-        Main_Window.addOutput("\n########## Resultats BARBOLOSI #########\n");
-        Main_Window.addOutput("### Ki = " + Ki + " ###\n");
-        Main_Window.addOutput("\n### Vb = " + Vb + " ###\n");
+        /*
+        Main_Window.println("########## Resultats BARBOLOSI #########\n");
+        Main_Window.println("### Ki = " + Ki + " ###");
+        Main_Window.println("### Vb = " + Vb + " ###");
+       */
         
         JOptionPane.showMessageDialog(null, "Ki = " + Ki +"\nVb = " + Vb);
+        
+        System.out.println("Message résultat supposé affiché!!");
+    }
+    
+    
+    /**
+     * On recherche le pixel max sur la somme des images de la série dynamique
+     */
+    private void findPixelMax() {
+        
+        pixelMax = findMax(pms.getEndDynSerie().getSummALL());
+        
+        System.out.println("Le Pixel Max se trouve sur l'image N°" + pixelMax[2]+"/"+ stackSize + ""
+                + " à la position ["+pixelMax[0]+" "+pixelMax[1]+"]");
+    }
+    
+    /**
+     * On récupèle le coupe {K<sub>i</sub>, V<sub>b</sub>} résultat
+     * @return {Ki, Vb}
+     */
+    public double[] getKiAndVb() {
+        double[] kivb = {Ki, Vb};
+        
+        return kivb;
     }
 
     

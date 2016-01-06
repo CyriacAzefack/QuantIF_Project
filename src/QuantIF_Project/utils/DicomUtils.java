@@ -302,7 +302,7 @@ public class DicomUtils {
            
             String filePath;
             String transferSyntaxUID = "1.2.840.10008.1.2"; //Implicit VR Endian: Default Transfer Syntax for DICOM
-            BufferedImage[] buffSumm = serie.getSummALL();
+            BufferedImage[] buffSumm = serie.getBuffSummALL();
             
             //On vide le dossier de sortie
             DicomUtils.emptyDirectory(new File(dirPath));
