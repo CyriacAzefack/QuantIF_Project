@@ -19,10 +19,14 @@ import QuantIF_Project.process.ParaPET;
 import QuantIF_Project.process.Hunter;
 import QuantIF_Project.process.Patlak;
 import QuantIF_Project.serie.Serie;
+import QuantIF_Project.utils.DicomUtils;
+import aa.test2;
 import ij.IJ;
 import java.awt.Component;
-import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -32,6 +36,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.text.DefaultCaret;
+import org.json.JSONObject;
 
 
 
@@ -60,6 +65,10 @@ public class Main_Window extends javax.swing.JFrame {
     private boolean openCancelled;
     
     /**
+     * Répertoires d'entrées et de sorties de données
+     */
+    private static String outputDir, inputDir;
+    /**
      * Creates new form main_window
      */
     public Main_Window() {
@@ -73,6 +82,9 @@ public class Main_Window extends javax.swing.JFrame {
         this.quantMethods.setEnabled(false);
         this.tsv = null;
         this.psv = null;
+        
+        //On charge le fichier de configuration
+        loadConfig();
         
         //On gère l'autoscroll de la console
         DefaultCaret caret = (DefaultCaret)console.getCaret();
@@ -366,7 +378,11 @@ public class Main_Window extends javax.swing.JFrame {
         //SERIE DYNAMIQUE DE DEPART
         TEPSerie startDynSerie; 
         Main_Window.println("Ouverture de la première série dynamique en cours...\n");
+        
         startDynSerie = chooseTEPSerie(true);
+       
+        
+        
         
         if (!openCancelled) {
         
@@ -374,6 +390,8 @@ public class Main_Window extends javax.swing.JFrame {
             TAPSerie staticSerie;
             Main_Window.println("\n\nOuverture de la série statique en cours...\n");
             staticSerie = chooseTAPSerie(startDynSerie);
+            
+           
             
             if (!openCancelled) {
 
@@ -577,62 +595,19 @@ public class Main_Window extends javax.swing.JFrame {
      */
     private TEPSerie chooseTEPSerie(boolean isFirst) {
         TEPSerie p = null;
-        
-       
-        JFileChooser chooser = this.dynSerieChooser;
-        int returnVal = chooser.showOpenDialog(this);
-        
-        if (JFileChooser.APPROVE_OPTION == returnVal) {
+        try {
+            String dir = null;
+            if(isFirst)
+                dir = inputDir + "dyn1\\";
+            else 
+                dir = inputDir + "dyn2\\";
             
-            File choosenFile;
-            choosenFile = chooser.getSelectedFile();
-           
-            // Un fois le dossier choisi
-            
-            if (choosenFile != null) {
-                String patientDirPath;
-                if (choosenFile.isDirectory()) {
-                    patientDirPath = choosenFile.getAbsolutePath();
-                }
-                else {
-                    patientDirPath = choosenFile.getParent();
-                }
-                
-                
-                //On peut créer un nouveau patient
-                
-               
-		try {
-			p = new TEPSerie(patientDirPath, true, isFirst);
-                        JOptionPane.showMessageDialog(desktop, "L'acquisition a été ouverte avec succès\n\n"+p.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
-                        
-                        Main_Window.println(p.toString());
-                        
-                        
-                        
-                        System.out.println(p);
-		} catch (NotDirectoryException | DicomFilesNotFoundException
-                        | BadParametersException e) {
-			// TODO Auto-generated catch block
-                        this.openCancelled = true;
-			JOptionPane.showMessageDialog(desktop, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                        Main_Window.println("Erreur Lors de l'ouverture...");
-                        
-		} 
-                
-		
-                
-            }
-            else {
-                this.openCancelled = true;
-                JOptionPane.showMessageDialog(desktop, "Problem accessing the file!", "Erreur", JOptionPane.ERROR_MESSAGE);
-            }
-           
-        } else {
-            this.openCancelled = true;
-            Main_Window.println("\nAnnulation ouverture série TEP!!\n");
-            Main_Window.println("PAS DE PATIENT EN COURS!!\n");
+            p = new TEPSerie(dir, true, isFirst);
+            return p;
+        } catch (NotDirectoryException | DicomFilesNotFoundException | BadParametersException ex) {
+            JOptionPane.showMessageDialog(desktop, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
         }
+        
         return p;
     }
     /**
@@ -661,7 +636,10 @@ public class Main_Window extends javax.swing.JFrame {
         });
     }
     
-    
+    public static String outputDir() {
+        
+        return outputDir;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem barbQuantMethod;
@@ -689,67 +667,18 @@ public class Main_Window extends javax.swing.JFrame {
 
     private synchronized TAPSerie chooseTAPSerie(TEPSerie startTEPSerie) {
         TAPSerie tapSerie = null;
-        
-       
-        JFileChooser chooser = this.statSerieChooser;
-        int returnVal = chooser.showOpenDialog(this);
-        
-        if (JFileChooser.APPROVE_OPTION == returnVal) {
-            
-            File choosenFile;
-            choosenFile = chooser.getSelectedFile();
+        try {
+            String dir = inputDir + "static\\";
            
-            // Un fois le dossier choisi
-            
-            if (choosenFile != null) {
-                String patientDirPath;
-                if (choosenFile.isDirectory()) {
-                    patientDirPath = choosenFile.getAbsolutePath();
-                }
-                else {
-                    patientDirPath = choosenFile.getParent();
-                }
-                
-                
-                //On peut créer un nouveau patient
-                
                
-		try {
-			System.out.println("INIT SERIE TAP");
-                        tapSerie = new TAPSerie(patientDirPath, true, startTEPSerie);
-                        JOptionPane.showMessageDialog(desktop, "L'acquisition a été ouverte avec succès\n\n"+tapSerie.toString(), "Info", JOptionPane.PLAIN_MESSAGE);
-                        Main_Window.println(tapSerie.toString());
-                        
-                        
-                        
-                        
-                       
-                        
-                    
-                        
-		} catch (NotDirectoryException | DicomFilesNotFoundException
-                        | BadParametersException | NoTAPSerieFoundException e) {
-			// TODO Auto-generated catch block
-                        
-                        this.openCancelled = true;
-			JOptionPane.showMessageDialog(desktop, e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                        Main_Window.println("Erreur Lors de l'ouverture...\nAnnulation de l'ouverture!!");
-                        
-		} 
-                
-		
-                
-            }
-            else {
-                this.openCancelled = true;
-                JOptionPane.showMessageDialog(desktop, "Problem accessing the file!", "Erreur", JOptionPane.ERROR_MESSAGE);
-            }
-           
-        } else {
-            this.openCancelled = true;
-            Main_Window.println("\nAnnulation ouverture série TAP!!\n");
-            Main_Window.println("PAS DE PATIENT EN COURS!!\n");
+            
+            tapSerie = new TAPSerie(dir, true, startTEPSerie);
+            
+        } catch (NotDirectoryException | DicomFilesNotFoundException | BadParametersException | NoTAPSerieFoundException ex) {
+            JOptionPane.showMessageDialog(desktop, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
         }
+        
+        
         return tapSerie;
     }
     
@@ -798,5 +727,27 @@ public class Main_Window extends javax.swing.JFrame {
     
     public static void println(String text) {
         console.append("\n"+text);
+    }
+    
+    /**
+     * Chargement du fichier de config
+     */
+    private void loadConfig() {
+        try {
+            String path = "config.txt";
+            String content = new String(Files.readAllBytes(Paths.get(path)));
+            System.out.println("Chargement du fichier de configuration...");
+            
+            JSONObject root =  new JSONObject(content);
+            
+          
+            
+            inputDir = root.getString("Input");
+            outputDir = root.getString("Output");
+            DicomUtils.emptyDirectory(new File(outputDir));
+            
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(desktop, "Erreur lors du chargement du fichier de configuration", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
