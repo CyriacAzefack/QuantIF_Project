@@ -20,7 +20,6 @@ import QuantIF_Project.process.Hunter;
 import QuantIF_Project.process.Patlak;
 import QuantIF_Project.serie.Serie;
 import QuantIF_Project.utils.DicomUtils;
-import aa.test2;
 import ij.IJ;
 import java.awt.Component;
 import java.io.File;
@@ -37,6 +36,7 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.text.DefaultCaret;
 import org.json.JSONObject;
+
 
 
 
