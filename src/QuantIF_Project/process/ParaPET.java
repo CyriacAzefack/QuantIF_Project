@@ -80,14 +80,12 @@ public class ParaPET {
     /**
      * Nombre de tirages aléatoires
      */
-    private final static int NB_RANDOM_DRAWINGS = 10;
+    private final static int NB_RANDOM_DRAWINGS = 1000;
     
     /**
-     * précisision sur la selection de ki & vb
+     * Précision sur la sélection du meilleur Ki
      */
-    private final static double PRECISION_Search = 1E-6;
-    
-    
+    private final static int NB_KH_STEPS = 100;
     
     /**
      * Ecart type des prélévement sanguins : 2%
@@ -316,28 +314,25 @@ public class ParaPET {
             System.out.println("###########################################################");
             
             
+            //TRAITEMENT DES RESULTATS
+            //saveImages(meanImages[0], "tmp\\meanImagesTaking1\\");
             
             
             
             
             
             
+            DicomUtils.saveImages(kiImages, "tmp\\ParaPET\\ImagesKi\\");
             
-            DicomUtils.saveImages(kiImages, "ParaPET\\ImagesKi\\");
+            DicomUtils.saveImages(vbImages, "tmp\\ParaPET\\ImagesVb\\");
             
-            DicomUtils.saveImages(vbImages, "ParaPET\\ImagesVb\\");
+            ColorProcessor[] newImages = new ColorProcessor[stackSize];
             
-            //On récupère la Somme totale des images de la série dynamique de fin
-            ImageProcessor[] imagesSumm = new ImageProcessor[kiImages.length];
+            newImages = applyKiImagesToMainImages();
             
-            TEPSerie endDyn = pms.getEndDynSerie();
-            imagesSumm = endDyn.getSummALL();
-           
+            DicomUtils.display(newImages, "Images des Ki ParaPET");
             
-            //DicomUtils.display(imagesSumm, kiImages, "Images des Ki ParaPET");
-            
-            DicomUtils.display(imagesSumm, kiImages, "Images des Ki ParaPET");
-            
+            DicomUtils.saveImages(newImages, "tmp\\ParaPET\\ImagesKi_Included\\");
             
             
             
@@ -671,36 +666,64 @@ public class ParaPET {
                         double epsilon = rand.nextGaussian()*sigmaImages[takingIndex][stackIndex].getPixel(col, row);
                         cj[takingIndex] = oldFdg + epsilon;
                     }
-                    double a = 0;
-                    double b = 0;
-                    double c = 0;
-                    double d = 0;
-                    double e = 0;
-                    double f = 0;
+                    double[] alpha = new double[2];
+                    double[] beta = new double[2];
+                    double[] gamma = new double[2];
 
                     for (int takingIndex  = 0; takingIndex < NB_TAKINGS; takingIndex++) {
-                        a += aj[takingIndex]*aj[takingIndex];
-                        b += bj[takingIndex]*bj[takingIndex];
-                        c += 2*aj[takingIndex]*bj[takingIndex];
-                        d += -2*aj[takingIndex]*cj[takingIndex];
-                        e += -2*bj[takingIndex]*cj[takingIndex];
-                        f += cj[takingIndex]*cj[takingIndex];
-                        
+                        alpha[0] += aj[takingIndex]*aj[takingIndex];
+                        alpha[1] += aj[takingIndex]*bj[takingIndex];
+
+                        beta[0] += aj[takingIndex]*bj[takingIndex];
+                        beta[1] += bj[takingIndex]*bj[takingIndex];
+
+                        gamma[0] += aj[takingIndex]*cj[takingIndex];
+                        gamma[1] += bj[takingIndex]*cj[takingIndex];
                     }
 
-                    double bestX = kh/2;
-                    double bestY = 1/2;
+                    double bestX = 0;
+                    double bestY = 0;
 
 
                     /* RESOLUTION A L'AIDE DES EQUATIONS*/
 
+                    double[] resultEquations = null;
+                    try {
+                        //On résouds le système sans tenir compte des contraintes
+                        resultEquations = MathUtils.solveEquations(alpha, beta, gamma);
+                    } catch (BadParametersException ex) {
+                        Logger.getLogger(ParaPET.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    bestX = resultEquations[0];
+                    bestY = resultEquations[1];
+                    double bestf = f(drawIndex, cj, bestX, bestY);
+
+                    double minf = Double.POSITIVE_INFINITY;
+                    //Si les solutions ne respectent pas les contraintes, 
+                    //on les trouve en parcourant l'ensemble des valeurs posssiblse
+                    if ((bestX > 0) && (bestX < kh) && (bestY > 0)) {
+                        n1++;
+                    }
+                    else {
                     
-                  
-                    double[] coeffs = {a,b,c,d,e,f};
-                    double[] xy = MathUtils.quadraticOptimization(coeffs, PRECISION_Search, bestX, bestY, 0, kh, 0, Double.POSITIVE_INFINITY);
+                        nParses ++;
+                        bestX = 0;
+                        bestY = 0;
+                        //System.out.println("Need to parse!!");
+                        for (int i = 0; i<=NB_KH_STEPS; i++) {
+                            double x = i*kh/NB_KH_STEPS;
+                            double y = (gamma[1] - x*alpha[1])/beta[1];
+                            if (y >= 0) {
+                                double f = f(drawIndex, cj, x, y);
+                                if (minf > f) {
+                                    minf = f;
+                                    bestX = x;
+                                    bestY = y;
+                                }
+                            }
+                        }
+                    }
                     
-                    bestX = xy[0];
-                    bestY = xy[1];
                     
                     
 
@@ -799,9 +822,63 @@ public class ParaPET {
     }
     
     
-   
+    /**
+     * Affiche les images Ki sur la somme de la série dynamique de fin
+     * @return 
+     */
+    private ColorProcessor[] applyKiImagesToMainImages() {
+        ColorProcessor[] newImages = new ColorProcessor[stackSize];
+        TEPSerie serie = pms.getEndDynSerie();
+        FloatProcessor[] summImages = new FloatProcessor[stackSize];
+        
+        float[][] summAll = serie.summSlices(0, serie.getNbBlocks()-1);
+        
+        for (int stackIndex = 0; stackIndex<stackSize; stackIndex++) {
+            FloatProcessor fp = new FloatProcessor(width, height, summAll[stackIndex]);
+            
+            newImages[stackIndex] = drawImageOnImage(fp, kiImages[stackIndex]);
+        }
+        
+        return newImages;
+    }
     
-   
+    /**
+     * Dessine une image sur une autre
+     * @param fp image à conserver
+     * @param imagesKi on change la couleur de cette image et on la dessine sur la première
+     * @return une nouvelle image contenant les deux images de départ
+     */
+    private ColorProcessor drawImageOnImage(ImageProcessor mainFp, FloatProcessor kiFp) {
+        LUT lut = LutLoader.openLut("luts\\Red Hot.lut");
+        ImagePlus kiImage = new ImagePlus("", kiFp);
+        
+        //On change la couleur de l'image à ajouter
+        kiImage.setLut(lut);
+        
+        BufferedImage kiBuff = kiImage.getBufferedImage();
+        mainFp = mainFp.convertToColorProcessor();
+        
+        //On récupère l'image principale
+        BufferedImage mainBuff = mainFp.getBufferedImage();
+        
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                float f = kiFp.getf(x, y);
+
+                if (f != 0) {
+                    
+                    int kiPix = kiBuff.getRGB(x, y);
+                    
+                    mainBuff.setRGB(x, y, kiPix);
+                }
+            }
+        }
+        
+        ImagePlus resultImage = new ImagePlus ("result Image", mainBuff);
+        
+        
+        return resultImage.getProcessor().convertToColorProcessor();
+    }
     
     
     

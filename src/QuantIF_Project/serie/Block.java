@@ -46,22 +46,4 @@ public abstract class Block {
      * 
      */
     public abstract String getAcquisitionTime();
-    
-    /**
-     * 
-     * @return Le temps de début d'acquisition en secondes
-     */
-    public abstract double getStartTime();
-    
-    /**
-     * 
-     * @return Le temps de fin d'acquisition en secondes
-     */
-    public abstract double getEndTime();
-    
-    /**
-     * 
-     * @return Le temps moyen d'acquisition en secondes
-     */
-    public abstract double getMidTime();
 }

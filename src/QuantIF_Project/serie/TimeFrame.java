@@ -161,10 +161,7 @@ public class TimeFrame extends Block implements Comparable<TimeFrame>{
     public int size() {
         return this.dicomImages.length;
     }
-    
-    /**
-     * Défini les temps de début et de fin de la frame en secondes
-     */
+
     public void setTime() {
         this.startTime = Double.valueOf(this.dicomImages[0].getAttribute(TagFromName.FrameReferenceTime))/1000;
         this.endTime = this.startTime + Double.valueOf(this.dicomImages[0].getAttribute(TagFromName.ActualFrameDuration))/1000;

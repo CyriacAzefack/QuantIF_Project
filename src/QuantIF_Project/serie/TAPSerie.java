@@ -4,7 +4,6 @@
  */
 package QuantIF_Project.serie;
 
-import QuantIF_Project.gui.Main_Window;
 import QuantIF_Project.patient.AortaResults;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
@@ -20,7 +19,6 @@ import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,6 +32,9 @@ import java.util.logging.Logger;
 
 public class TAPSerie implements Serie{
     
+   
+    
+   
     
     /**
      * Liste des fichiers dicom
@@ -51,7 +52,6 @@ public class TAPSerie implements Serie{
      * 
      */
     private BodyBlock choosenBodyBlock;
-    
     /**
      * Listes des parties du corps
      */
@@ -157,7 +157,6 @@ public class TAPSerie implements Serie{
         ArrayList<Integer> AcqNumberList = new ArrayList<>();
         int AcqNumber;
         for (DicomImage di : this.dicomImages) {
-            //Pour inverser le sens d'affichage (sens tête -> Pieds)
             AcqNumber = 0 - Integer.valueOf(di.getAttribute(TagFromName.AcquisitionNumber));
             //AcqNumber = di.getAttribute(TagFromName.NumberOfSlices);
             if (!AcqNumberList.contains(AcqNumber))
@@ -251,59 +250,62 @@ public class TAPSerie implements Serie{
             return this.bodyBlocks.get(index);
     }
     
-   
     /**
-    * Calcule la moyenne dans la ROI pour toutes les frames
-    * @param roi Zone sélectionnée
-    * @param startFrameIndex inutile pour les séries statiques
-    * @param endFrameIndex inutile pour les séries statiques
-    */
-        @Override
-    public void selectAorta(Roi roi, int startFrameIndex, int endFrameIndex)  {
+     * On fait les calculs sur la ROI
+     * @param roi roi selectionnée
+     * @param startIndex inutile pour une série TAP
+     * @param endIndex inutile pour une série TAP
+     */
+    @Override
+    public void selectAorta(Roi roi, int startIndex, int endIndex) {
+        ImageStack imgStack = new ImageStack(this.width, this.height, null);
+
+        //On fait la somme des Coupes allant de "startIndex" à "endIndex"
+        FloatProcessor imgProc;
+        ImagePlus summAll;
+        float[][] summSlices;
+        summSlices = this.summSlices(startIndex, endIndex);
         
-        //On récupère la position de l'image sur laquelle a été tracée la ROI
-        int imageIndex = roi.getPosition();
-        
-        
-        
-        //On rempli le tableau en parcourant les frames
-        
-        DicomImage di = this.choosenBodyBlock.getDicomImage(imageIndex);
-                
-        ImageProcessor ip = di.getImageProcessor();
-           
-        
-        
-        RoiManager roiManager = new RoiManager(true); //S'occupe de la gestion des ROI et des images (Outil ImageJ)
-        
-        roiManager.addRoi(roi);
-        
-        System.out.println("Selected ROI position : " + roi.getPosition());
-        
-       
-        ImagePlus imagePlus; //Image sur laquelle on vas faire le calcul. Type de données acceptées par le roiManager
-        
-        
-              
-        imagePlus = new ImagePlus("", ip);
-            
-        
-        
-        
-        
-        roiManager.select(0); //On selectionne la roi qu'on vient d'ajouter
-        
-        //on fait de la muti- mesure sur la roi
-        ResultsTable multiMeasure = roiManager.multiMeasure(imagePlus);
-        
-        
-        //On crée les resultats
-        createResults(roi, multiMeasure);
-            
-    }
         
 
-    
+        
+        //On parcout la liste des images pour les chargés dans le stack
+        for (float[] pixels : summSlices) {
+
+
+            imgProc = new FloatProcessor(width, height, pixels);
+            imgStack.addSlice(imgProc);
+        }
+        
+        //Ensemble des images résultantes de la somme
+        summAll = new ImagePlus("", imgStack);
+
+
+        //On cree les stacks des images non sommés
+        ImagePlus[] framesStack = new ImagePlus[this.choosenBodyBlock.size()];
+        //à la position i, on aura un stack composé de tous les images d'indice i de chaque coupe temporelle
+        for (int imageIndex = 0; imageIndex < this.choosenBodyBlock.size(); imageIndex++) {
+            //On doit recupérer toutes les images  à la frameIndex dans tous les coupes temporelles
+            ImageStack stack = new ImageStack(width, height);
+           
+            
+            DicomImage dcm  = this.choosenBodyBlock.getDicomImage(imageIndex);
+            if (dcm != null) {
+                stack.addSlice(dcm.getImageProcessor());
+            }
+            else {
+                FloatProcessor sp = new FloatProcessor(width, height);
+                stack.addSlice(sp);
+                
+            }
+            
+            framesStack[imageIndex] = new ImagePlus("", stack);
+        }
+        
+        getRoiResults(roi, summAll, framesStack);
+        
+
+    }
 
     @Override
     public void setParent(PatientMultiSeries pms) {
@@ -409,7 +411,55 @@ public class TAPSerie implements Serie{
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    
+    private void getRoiResults(Roi roi, ImagePlus summAll, ImagePlus[] framesStack) {
+        //On récupère la série d'images statique affichée
+        ImagePlus impROI = WindowManager.getImage("Série Statique TAP -- " + 1 + "x" + this.choosenBodyBlock.size());
+        
+        //Si elle n'est pas affichée, on l'affiche
+        if (impROI == null) {
+            summAll.setTitle("Série Statique TAP -- " + 1 + "x" + this.choosenBodyBlock.size());
+            
+            impROI = summAll;
+            System.out.println("***RESET AFFICHAGE "+ 1 + "x" + this.choosenBodyBlock.size()+"****");
+            
+            impROI.show();
+        }
+        
+        Roi selectedRoi = roi;
+        
+       //On recupére la ROI dessinée sur la série si il y en a une
+        if (impROI.getRoi() != null) {
+            selectedRoi = impROI.getRoi();
+            //selectedRoi.setPosition(roi.getPosition());
+            
+            
+        }
+        
+        
+        
+        //summAll.setRoi(selectedRoi, true);
+        
+        
+        RoiManager roiManager = new RoiManager(true); //true -> Ce roimanager ne s'affiche pas
+        
+        roiManager.addRoi(selectedRoi);
+        System.out.println("Selected ROI position : " + selectedRoi.getPosition());
+        
+       
+        ImagePlus stack = framesStack[selectedRoi.getPosition()-1];
+            
+        
+        //ImagePlus stackFrame = framesStack[selectedRoi.getPosition()-1];
+        
+        
+        roiManager.select(0); //On selectionne la roi qu'on vient d'ajouter
+        //on fait de la muti- mesure sur la roi
+        ResultsTable multiMeasure = roiManager.multiMeasure(stack);
+        
+        //On crée les resultats
+        createResults(selectedRoi, multiMeasure, impROI.getTitle());
+        
+    }
     
     /**
      * Construit les résultats de l'aorte
@@ -417,7 +467,7 @@ public class TAPSerie implements Serie{
      * @param resultTable résultats liés à cette ROI
      * @param timeAxis l'axe des temps
      */
-    private void createResults(Roi roi, ResultsTable resultTable) {
+    private void createResults(Roi roi, ResultsTable resultTable, String imageTitle) {
         //on ajoute la liste des acquisition times a resultTable
         int resultTableSize = resultTable.getColumnAsDoubles(0).length;
         System.out.println("Size of ResultsTable : " + resultTableSize );
@@ -432,20 +482,23 @@ public class TAPSerie implements Serie{
         
         
         this.aortaResults = new AortaResults(this.name, roi, resultTable);
-      
+        
+        
+        
+        
+        //On dessine sur l'image la ROI utilisée pour le calul
+        ImagePlus impROI = WindowManager.getImage(imageTitle);
+        impROI.setRoi(roi);
+        
     }
-    
-    
     
     public boolean isPartOfMultAcq () {
         return this.isPartOfMultAcq;
     }
     
-    
     public BufferedImage[] getStartTEPSerieSummAll() {
         return this.startTEPSerie.getBuffSummALL();
     }
-    
     
     public BufferedImage[] getAllImages() {
         BufferedImage[] buffs = new BufferedImage[dicomImages.size()];

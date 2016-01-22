@@ -4,20 +4,9 @@
  */
 package aa;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-
-
-
-
-
-
+import java.math.BigDecimal;
+import java.math.MathContext;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -25,26 +14,28 @@ import org.json.JSONObject;
  */
 public class test2 {
    
+   
     /**
     * @param args
     */
-    public static void main(String[] args)  {
-        try {
-            String path = "C:\\Users\\kamelya\\Documents\\NetBeansProjects\\QuantIF_Project\\config.txt";
-            String content = new String(Files.readAllBytes(Paths.get(path)));
-            System.out.println("File ....");
-            System.out.println(content);
-            JSONObject root =  new JSONObject(content);
-            
-            System.out.println(root);
-            
-            String inputPath = root.getString("Input");
-            
-            System.out.println(inputPath);
-        } catch (IOException ex) {
-            Logger.getLogger(test2.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public static void main(String[] args) {
         
-
+        
+        
+        float Ki = (float) 1.6644976333716384E-4;
+        float Vb = (float) 2.609357232864692;
+        BigDecimal bdKi = new BigDecimal(Ki);
+        bdKi = bdKi.round(new MathContext(4));
+        
+        BigDecimal bdVb = new BigDecimal(Vb);
+        bdVb = bdVb.round(new MathContext(4));
+        
+        
+        System.out.println("########## Ki = " + Ki + " #########");
+        System.out.println("########## Vb = " + Vb + " #########");
+        JOptionPane.showMessageDialog(null, "Ki = " +bdKi.floatValue()+"\nVb = " + bdVb.floatValue());
+        
     }
 }
+
+    

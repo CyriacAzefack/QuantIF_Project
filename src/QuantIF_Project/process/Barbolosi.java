@@ -95,12 +95,12 @@ public class Barbolosi {
     private final static int NB_RANDOM_DRAWINGS = 10000;
     
     /**
-     * précisision sur la selection de ki & vb
+     * Précision sur la sélection du meilleur Ki
      */
-    private final static double PRECISION_Search = 1E-6;
+    private final static int NB_KH_STEPS = 1000;
     
     /**
-     * Ecart type des prélévement sanguins (en %)
+     * Ecart type des prélévement sanguins
      */
     private final static double SIGMA_CB = 0.02;
     
@@ -220,12 +220,10 @@ public class Barbolosi {
         }
         
         //Tirages aléatoires des valeurs de fdg sur les images
-        
-        
-        Main_Window.println("ZONE SELECTIONNEE");
-        Main_Window.println("X ["+startX+" "+endX+"]");
-        Main_Window.println("Y ["+startY+" "+endY+"]");
-        Main_Window.println("Width : " + (endX - startX) +" Height : " + (endY-startY));
+        System.out.println("ZONE SELECTIONNEE");
+        System.out.println("X ["+startX+" "+endX+"]");
+        System.out.println("Y ["+startY+" "+endY+"]");
+        System.out.println("Width : " + (endX - startX) +" Height : " + (endY-startY));
         
         findPixelMax();
         
@@ -251,10 +249,10 @@ public class Barbolosi {
             for (int takingIndex = 0; takingIndex < NB_TAKINGS; takingIndex++) {
 
                 //On cherche la frame la plus proche
-                Main_Window.println("************ PRELEVEMENT N°"+(takingIndex+1)+"/"+NB_TAKINGS+" *************");
+                System.out.println("************ PRELEVEMENT N°"+takingIndex+" *************");
                 int frameIndex = findNearestTimeFrameIndex(times[takingIndex]);
                 nearestTimeFrameIndexes[takingIndex] = frameIndex;
-                Main_Window.println("Taking N°"+ (takingIndex+1)+" -> "
+                System.out.println("Taking N°"+ (takingIndex+1)+" -> "
                         + "Nearest Time Frame Index  = " 
                         + (nearestTimeFrameIndexes[takingIndex] + 1));
 
@@ -266,7 +264,7 @@ public class Barbolosi {
                 if (takingIndex == 0)
                     Kh = hunter.getKh(pixelMax[2], roiSearch);
 
-                Main_Window.println("Kh Hunter : " + Kh);
+                System.out.println("Kh Hunter : " + Kh);
 
 
 
@@ -283,19 +281,19 @@ public class Barbolosi {
 
 
 
-                Main_Window.println("Trio d'images récupéré! Index image milieu : " + pixelMax[2] );
+                System.out.println("Trio d'images récupéré!");
 
                 //On récupère la ROI déssinée par l'utilisateur
 
 
 
-                
+                System.out.println("Acquisition de la ROI Tumorale");
 
                 getMeanAndSigmaFDGTumor(takingIndex, trioImages);
 
             }
 
-            calculateKiAndVb();
+            compileKiAndVb();
                  
              
            
@@ -428,7 +426,6 @@ public class Barbolosi {
         //format : hhmmss
         String[] timesStr = {"085600", "090100", "090600", "091100"};
         TEPSerie serie = pms.getStartDynSerie();
-        System.out.println("Tableau des prélèvements : ");
         for (int takingIndex = 0; takingIndex < NB_TAKINGS; takingIndex++) {
             timesStr[takingIndex] += ".000000"; // on ajoute .frac pour avoir le mm format que dans les champs DICOM
             times[takingIndex] = DicomUtils.getMinutesBetweenDicomDates(serie.getSeriesTime(), timesStr[takingIndex]);
@@ -603,61 +600,94 @@ public class Barbolosi {
 
         sigmaFDGTumor[takingIndex] = Math.sqrt(variance);
         
-        Main_Window.println("Mean FDG = " + meanFDGTumor[takingIndex] + "\nSigma FDG = " + sigmaFDGTumor[takingIndex]);
+        System.out.println("Mean FDG = " + meanFDGTumor[takingIndex] + "\nSigma FDG = " + sigmaFDGTumor[takingIndex]);
     }
     
     /**
      * On calcule Ki et Vb
      */
-    private void calculateKiAndVb() {
+    private void compileKiAndVb() {
         //On fait les tirages aléatoires
         double[] aj = new double[NB_TAKINGS]; //Aires sous la courbes pour les différents temps de prélèvement
         double[] bj = new double[NB_TAKINGS]; //Valeurs de Cp(tj)
         double[] cj = new double[NB_TAKINGS]; //Valeurs de FDG(tj)
-        
-        
-        
+
         for (int drawIndex = 0; drawIndex < NB_RANDOM_DRAWINGS; drawIndex++) {
             Random rand = new Random();
 
             for (int takingIndex = 0; takingIndex < NB_TAKINGS; takingIndex++) {
                 aj[takingIndex] = AUC[takingIndex];
-                bj[takingIndex] = Cbi[takingIndex] + rand.nextGaussian()*SIGMA_CB*Cbi[takingIndex]; //Multiplication par Cbi pour cohérence des unités
+                bj[takingIndex] = Cbi[takingIndex] + rand.nextGaussian()*SIGMA_CB*Cbi[takingIndex];
                 cj[takingIndex] = meanFDGTumor[takingIndex] + rand.nextGaussian()*sigmaFDGTumor[takingIndex];
             }
-            double a = 0;
-            double b = 0;
-            double c = 0;
-            double d = 0;
-            double e = 0;
-            double f = 0;
+            double[] alpha = new double[2];
+            double[] beta = new double[2];
+            double[] gamma = new double[2];
 
             for (int takingIndex  = 0; takingIndex < NB_TAKINGS; takingIndex++) {
-                a += aj[takingIndex]*aj[takingIndex];
-                b += bj[takingIndex]*bj[takingIndex];
-                c += 2*aj[takingIndex]*bj[takingIndex];
-                d += -2*aj[takingIndex]*cj[takingIndex];
-                e += -2*bj[takingIndex]*cj[takingIndex];
-                f += cj[takingIndex]*cj[takingIndex];
+                alpha[0] += aj[takingIndex]*aj[takingIndex];
+                alpha[1] += aj[takingIndex]*bj[takingIndex];
 
+                beta[0] += aj[takingIndex]*bj[takingIndex];
+                beta[1] += bj[takingIndex]*bj[takingIndex];
+
+                gamma[0] += aj[takingIndex]*cj[takingIndex];
+                gamma[1] += bj[takingIndex]*cj[takingIndex];
             }
 
-            double bestX = Kh/2;
-            double bestY = 1/2;
+            double bestX = 0;
+            double bestY = 0;
 
 
             /* RESOLUTION A L'AIDE DES EQUATIONS*/
 
+            double[] resultEquations = null;
+            try {
+                //On résouds le système sans tenir compte des contraintes
+                resultEquations = MathUtils.solveEquations(alpha, beta, gamma);
+            } catch (BadParametersException ex) {
+                Logger.getLogger(ParaPET.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            bestX = resultEquations[0];
+            bestY = resultEquations[1];
+            
+            /*
+            System.out.println("Aj -> " + Arrays.toString(aj));
+            System.out.println("Bj -> " + Arrays.toString(bj));
+            System.out.println("Cj -> " + Arrays.toString(cj));
+            */
+            
+            double minf = Double.POSITIVE_INFINITY;
+            //Si les solutions ne respectent pas les contraintes, 
+            //on les trouve en parcourant l'ensemble des valeurs posssiblse
+            if ((bestX > 0) && (bestX < Kh) && (bestY < 0)) {
+            }
+            else {
+
+                bestX = 0;
+                bestY = 0;
+                //System.out.println("Need to parse!!");
+                for (int i = 0; i<=NB_KH_STEPS; i++) {
+                    double x = i*Kh/NB_KH_STEPS;
+                    double y = (gamma[1] - x*alpha[1])/beta[1];
+                    if (y >= 0) {
+                        double f = f(aj, bj, cj, x, y);
+                        if (minf > f) {
+                            minf = f;
+                            bestX = x;
+                            bestY = y;
+                            
+                        }
+                    }
+                }
+            }
+            
+            
 
 
-            double[] coeffs = {a,b,c,d,e,f};
-            double[] xy = MathUtils.quadraticOptimization(coeffs, PRECISION_Search, bestX, bestY, 0, Kh, 0, Double.POSITIVE_INFINITY);
-
-            bestX = xy[0];
-            bestY = xy[1];
 
 
-            //Résultat = moyenne des 10000 tirages aléatoires
+
             Ki += bestX/NB_RANDOM_DRAWINGS;
             Vb += bestY/NB_RANDOM_DRAWINGS;
 
@@ -666,21 +696,25 @@ public class Barbolosi {
         //On défini les 3 chiffres significatifs après la virgule
         
         BigDecimal bdKi = new BigDecimal(Ki);
-        bdKi = bdKi.round(new MathContext(6));
+        bdKi = bdKi.round(new MathContext(4));
         
         BigDecimal bdVb = new BigDecimal(Vb);
-        bdVb = bdVb.round(new MathContext(6));
+        bdVb = bdVb.round(new MathContext(4));
         
         Ki = bdKi.doubleValue();
         Vb = bdVb.doubleValue();
         System.out.println("########## Ki = " + Ki + " #########");
         System.out.println("########## Vb = " + Vb + " #########");
         
-       
+        /*
+        Main_Window.println("########## Resultats BARBOLOSI #########\n");
+        Main_Window.println("### Ki = " + Ki + " ###");
+        Main_Window.println("### Vb = " + Vb + " ###");
+       */
         
         JOptionPane.showMessageDialog(null, "Ki = " + Ki +"\nVb = " + Vb);
         
-        //System.out.println("Message résultat supposé affiché!!");
+        System.out.println("Message résultat supposé affiché!!");
     }
     
     
@@ -691,7 +725,7 @@ public class Barbolosi {
         
         pixelMax = findMax(pms.getEndDynSerie().getSummALL());
         
-        Main_Window.println("Le Pixel Max se trouve sur l'image N°" + pixelMax[2]+"/"+ stackSize + ""
+        System.out.println("Le Pixel Max se trouve sur l'image N°" + pixelMax[2]+"/"+ stackSize + ""
                 + " à la position ["+pixelMax[0]+" "+pixelMax[1]+"]");
     }
     
