@@ -48,21 +48,23 @@ public class BodyBlock extends Block{
     }
     
     /**
-     * Renvoie le temps moyen de l'acquisition en secondes
+     * 
+     * @return le temps moyen de l'acquisition en secondes
      */
     public double getMidTime() {
         return (this.startTime + this.endTime)/2;
     }
     
     /**
-     * Renvoie le temps de début d'acquisition en secondes
+     * @return le temps de début d'acquisition en secondes
      */
+    @Override
     public double getStartTime() {
         return this.startTime;
     } 
     
     /**
-     * Renvoie le temps de fin d'acquisition en secondes
+     * @return le temps de fin d'acquisition en secondes
      */
     public double getEndTime() {
         return this.endTime;

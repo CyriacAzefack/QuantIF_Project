@@ -70,10 +70,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     
     
     
-    /**
-     * LUT en cours
-     */
-    private LUT currentLUT;
+   
     
     /**
      * Luminosité des images
@@ -354,7 +351,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
 
     private void sliderMaxStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMaxStateChanged
         this.maxBrightness = this.sliderMax.getValue();
-        this.currentLUT.max = this.sliderMax.getValue();
+        
         display(this.currentImageID);
     }//GEN-LAST:event_sliderMaxStateChanged
 
@@ -364,7 +361,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
 
     private void sliderMinStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMinStateChanged
         this.minBrightness = this.sliderMin.getValue();
-         this.currentLUT.min = this.sliderMin.getValue();
+         
         display(this.currentImageID);
     }//GEN-LAST:event_sliderMinStateChanged
 
@@ -578,7 +575,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         
         
         
-        this.currentLUT = LutLoader.openLut("luts\\Red Hot.lut");
+        
         
         
         

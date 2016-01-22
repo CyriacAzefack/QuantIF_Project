@@ -4,6 +4,7 @@
  */
 package QuantIF_Project.utils;
 
+import QuantIF_Project.gui.Main_Window;
 import QuantIF_Project.gui.PatientSerieViewer;
 import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.serie.TEPSerie;
@@ -19,8 +20,11 @@ import com.pixelmed.dicom.TagFromName;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.plugin.LutLoader;
+import ij.process.ColorProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import ij.process.LUT;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -47,34 +51,8 @@ public class DicomUtils {
          return DicomFileUtilities.isDicomOrAcrNemaFile(file);
     }
      
-     /**
-      * Affiche les images passés en paramètres
-      * @param buffs Tableau de bufferedImages
-     * @throws QuantIF_Project.patient.exceptions.BadParametersException 
-     *      la liste d'images doit être non vide
-      */
-    public static void showImages(BufferedImage[] buffs) throws BadParametersException {
-        if (buffs.length < 0)
-            throw new BadParametersException("La liste d'images doit être non vide");
-        ImageStack imgStack = new ImageStack(buffs[0].getWidth(), buffs[0].getHeight(), null);
-
-        ImageProcessor imgProc;
-        ImagePlus imp;
-
-        
-        //On parcout la liste des images pour les chargés dans le stack
-        for (BufferedImage buff : buffs) {
-
-            ImagePlus impTemp = new ImagePlus("", buff);
-
-            imgProc = impTemp.getProcessor();
-            imgStack.addSlice(imgProc);
-        }
-
-        imp = new ImagePlus("", imgStack);
-        
-        imp.show();
-    }
+     
+   
     
     /**
      * Sauvegarde le tableau d'image dans le format TIFF
@@ -103,11 +81,11 @@ public class DicomUtils {
     }
     
     /**
-     * transfome un tableau de pixels en bufferedImage
+     * Transfome un tableau de pixels en bufferedImage (pour l'affichage, valeurs pixels [0-255])
      * @param width 
      * @param height
      * @param pixels
-     * @return BufferedImage
+     * @return BufferedImage 
      */
     public static BufferedImage pixelsToBufferedImage(int width, int height, float[] pixels) {
          FloatProcessor fp = new FloatProcessor(width, height , pixels );
@@ -162,6 +140,13 @@ public class DicomUtils {
         return minutes;
     }
     
+     /**
+     * Calcule le nombre de secondes entre les deux dates.
+     * Si la date de fin est plus tôt que celle de début, on suppose que c'est la date de la journée suivante
+     * @param early date de début
+     * @param late date de fin
+     * @return 
+     */
     public static double getSecondesBetweenDicomDates(String early, String late) {
         //Exemple de String : 082804.406005 
         //format : hhmmss.frac
@@ -342,10 +327,12 @@ public class DicomUtils {
    
    /**
      * Sauvegarde les images
-     * @param images
-     * @param dirPath 
+     * @param images (ImageProcessor valeur réelle du pixel)
+     * @param dirPath (crée le dossier si il n'existe pas et le vide avant de sauver les images)
      */
     public static void saveImages(ImageProcessor[] images, String dirPath) {
+        
+        dirPath = Main_Window.outputDir() + dirPath;
         ImageStack is = new ImageStack(images[0].getWidth(), images[0].getHeight());
         File file = new File(dirPath);
         file.mkdirs();
@@ -375,6 +362,62 @@ public class DicomUtils {
        }
 
        PatientSerieViewer.setDisplayedImage(buffs, title);
+    }
+    
+    /**
+     * On affiche les images
+     * @param images1
+     * @param images2
+     * @param title Titre des images
+     */
+    public static void display(ImageProcessor[] images1, ImageProcessor[] images2, String title) {
+
+       BufferedImage[] buffs1 = new BufferedImage[images1.length];
+       BufferedImage[] buffs2 = new BufferedImage[images2.length];
+       for (int i = 0; i < images1.length; i++) {
+           buffs1[i] = images1[i].getBufferedImage();
+           buffs2[i] = images2[i].getBufferedImage();
+       }
+
+       PatientSerieViewer.setDisplayedImage(buffs1, buffs2, title);
+    }
+    
+    
+    
+     /**
+     * Dessine une image sur une autre avec les poids respectifs f1 et f2
+     * @param mainImage
+     * @param secondImage
+     * @param alpha Poids de l'image principale ( &lt; ou = à 1)
+     * @param beta Poids de l'image secondaire ( &lt; ou = à 1)
+     * @return une nouvelle image contenant les deux images de départ
+     */
+    public static ImageProcessor drawImageOnImage(FloatProcessor mainImage, FloatProcessor secondImage, float alpha, float beta) {
+        
+        int width = mainImage.getWidth();
+        int height = mainImage.getHeight();
+        
+        FloatProcessor result = new FloatProcessor(width, height);
+        
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                float spix = secondImage.getf(x, y);
+                
+                if (spix == 0) {
+                    float mpix = mainImage.getf(x, y);
+                    result.setf(x, y, mpix*alpha);
+                }
+                
+                else {
+                    result.setf(x, y, spix*beta);
+                }
+            }
+        }
+        
+        
+       
+        
+        return result;
     }
    
 }

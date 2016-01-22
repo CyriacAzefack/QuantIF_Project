@@ -8,6 +8,15 @@ import QuantIF_Project.patient.exceptions.BadParametersException;
 import ij.measure.CurveFitter;
 import java.awt.Color;
 import java.util.Arrays;
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.MultivariateFunctionPenaltyAdapter;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.NelderMeadSimplex;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.SimplexOptimizer;
 import org.jfree.ui.RefineryUtilities;
 
 /**
@@ -47,69 +56,88 @@ public class MathUtils {
      * Fit sur une courbe d'entrée artérielle.
      * On fit la courbe sur sa partie décroissante à l'aide d'une exponentielle décroissante,
      *  puis on fait la symétrie de la courbe par rapport à la valeur max pour avoir la partie
-     *  croissante
+     *  croissante. On garde le résultat du  
      * @param xArray tableau des abscisses
      * @param yArray tableau des ordonnées
-     * @return 
+     * @param newXArray Le résultat sera l'image de ce tableau d'abscisses
+     * @return result résultat fit partie croissante + partie décroissante de départ
      * @throws QuantIF_Project.patient.exceptions.BadParametersException 
      */
-    public static double[] arterialFit(double[] xArray, double[] yArray) throws BadParametersException {
+    public static double[] arterialFit(double[] xArray, double[] yArray, double[] newXArray) throws BadParametersException {
         if(xArray.length != yArray.length) 
             throw new BadParametersException("Les deux tableaux doivent avoir la même taille!!");
         
-        double[] result = new double[xArray.length];
+        
         double[][] data = new double[2][xArray.length];
         data[1] = yArray;
         data[0] = xArray;
-        double x;
-        double y;
+        
         
         //index de la valeur max sur la courbe
         int symetryIndex = getMaxIndex(data[1]);
         
+        //dataToFit représente la partie sur laquelle on vas faire le fit : ici c'est la partie décroissante de la courbe (Après le max)
         double[][] datatoFit = {Arrays.copyOfRange(data[0], symetryIndex, data[0].length), Arrays.copyOfRange(data[1], symetryIndex, data[1].length)};
         
         CurveFitter fitter = new CurveFitter(datatoFit[0], datatoFit[1]);
-        /*
-        double[] initialParameters = new double[2];
-        String formula = "y = a*exp(-b*x)";
-        int doCustomFit = endFitter.doCustomFit(formula, initialParameters, true);
-        System.out.println("Custom fit = " + doCustomFit);
-        */
+        
         fitter.doFit(CurveFitter.EXPONENTIAL);
         
         double[][] decayResults = new double[2][datatoFit[0].length];
+        
+        //decayResults réprésente le résultat du fit pour la partie décroissante
         decayResults[0] = fitter.getXPoints();
         
         for (int i = 0; i < decayResults[0].length; i++)
             decayResults[1][i] = fitter.f(decayResults[0][i]);
         
+        //risingResults répresente le résultat de la symétrie de fit pour la partie croissante
         double[][] risingResults = new double[2][symetryIndex+1];
         
         for (int i = 0; i < risingResults[0].length; i++) {
             risingResults[0][i] = data[0][i];
+            
+            //On utilise une formule de symétrie,  l'axe de symétrie étant la droite x = a, on a fsym(x) = f(2a - x)
             risingResults[1][i] = fitter.f(2*data[0][symetryIndex] - data[0][i]);
         }
         
         
+        double[] result = new double[newXArray.length];
         
-        //On copie les résultats de la partie croissante
-        System.arraycopy(risingResults[1], 0, result, 0, risingResults[1].length);
-        //On copie les résultats de la partie décroissante
-        System.arraycopy(decayResults[1], 1, result, risingResults[1].length, decayResults[1].length-1);
+        //Valeur de x du max en y
+        double xMax = data[0][symetryIndex];
+        
+        
+        
+        for (int i = 0; i < result.length; i++) {
+            double x = newXArray[i];
+            if (x < xMax) {
+                result[i] = fitter.f(2*xMax - x);
+            }
+            else {
+                int diff = result.length - yArray.length;
+                result[i] = yArray[i - diff];
+            }
+           
+        }
+        
+        
+        
+      
         
         
         System.out.println("########################################");
         System.out.println("Fit de courbe: " +  fitter.getResultString());
         System.out.println("########################################");
-        Curve chart = new Curve("Fit courbe","R2 = " + fitter.getRSquared(), "Temps",  "data", data[0], data[1]);
+        Curve chart = new Curve("Fit courbe","R2 = " + fitter.getRSquared(), "Temps (min)",  "data", data[0], data[1]);
         
-        chart.addData(data[0], result, "fin courbe", Color.YELLOW, 4.0f);
+        chart.addData(newXArray, result, "Résultat Fit", Color.YELLOW, 4.0f);
         /*
         chart.addData( risingResults[0],  risingResults[1], "début de courbe", Color.GREEN, 2.0f);
         */
         chart.setVisible( true );
         RefineryUtilities.centerFrameOnScreen(chart);
+        
         
         return result;
     }    
@@ -200,5 +228,86 @@ public class MathUtils {
         
         return result;
     }
+    
+    /**
+     * Méthode de Quasi Newton pour une fonction
+     * f(x,y) = ax<sup>2</sup> + by<sup>2</sup> + cxy + dx + ey + f
+     * @param coeffs tableau [a, b, c, d, e, f]
+     * @param eps tolérance sur le résultat
+     * @param x0 valeur initiale    
+     * @param y0 valeur initiale
+     * @param xmin valeur minimale de x
+     * @param xmax valeur maximale de x
+     * @param ymin valeur minimale de y
+     * @param ymax valeur maximale de y
+     * @return  
+     */
+    public static double[] quadraticOptimization(double[] coeffs, double eps, double x0, double y0, 
+                                                    double xmin, double xmax, double ymin, double ymax) {
+        
+        SimplexOptimizer optimizer = new SimplexOptimizer(eps, 1E-30);
+        QuadraFunction function = new QuadraFunction(coeffs);
+        
+        //Contraintes de type <= et >=
+        double[] lower = {xmin, ymin};
+        double[] upper = {xmax, ymax};
+        
+        if (xmax < xmin) {
+            System.out.println("xmin > xmax");
+        }
+       
+       
+        if (ymax < ymin) {
+            System.out.println("ymin > ymax");
+        }
+        
+        
+        MultivariateFunctionPenaltyAdapter functionWithBounds = new MultivariateFunctionPenaltyAdapter(function, lower, upper, 1000, new double[]{1000, 1000});
+        
+        
+        PointValuePair optimum = 
+                
+            optimizer.optimize(
+                new MaxEval(1000), 
+                new ObjectiveFunction(functionWithBounds), 
+                GoalType.MINIMIZE,
+                new InitialGuess(new double[]{ x0, y0 }), 
+                new NelderMeadSimplex(new double[]{ 0.2, 0.2 })); //-> voir interêt NelderMeadSimplex
+             
+            
+        //System.out.println(Arrays.toString(optimum.getPoint()) + " : " + optimum.getSecond());
+         
+        return optimum.getPoint();
+    }
+    
+    private static class QuadraFunction implements MultivariateFunction  {
+        
+        private double[] c;
+        public QuadraFunction(double[] coeffs) {
+            this.c = coeffs;
+        }
+        public double value(double[] point)
+        {
+            final double x = point[0];
+            final double y = point[1];
+            return f(x,y);
+        }
+        
+        private double f(double x, double y) {
+            double v = c[0]*x*x + c[1]*y*y + c[2]*x*y + c[3]*x + c[4]*y + c[5];
+        
+        return v;
+        }
+    }
+    
+    
+    
+   
+    
+    
+
+    
+    
+    
    
 }

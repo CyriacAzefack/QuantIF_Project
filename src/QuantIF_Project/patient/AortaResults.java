@@ -4,10 +4,12 @@
  */
 package QuantIF_Project.patient;
 
+import QuantIF_Project.gui.Main_Window;
 import QuantIF_Project.utils.Curve;
 import ij.gui.Roi;
 import ij.io.RoiEncoder;
 import ij.measure.ResultsTable;
+import java.io.File;
 import org.jfree.ui.RefineryUtilities;
 
 /**
@@ -39,7 +41,11 @@ public class AortaResults {
        this.resultTable = new ResultsTable();
        this.title = serieName;
     }
-
+    
+    /**
+     * 
+     * @param yMeasureUnity 
+     */
     public void display(String yMeasureUnity) {
         this.resultTable.show(this.title + " Tableau de résultats");
         int timeColumnIndex = this.resultTable.getColumnIndex("Mid time (sec)");
@@ -97,7 +103,7 @@ public class AortaResults {
      * @return AortaResults
      */
     public AortaResults addResults(ResultsTable rtToAdd) {
-        System.out.println("Size de results au début: " + this.resultTable.size());
+        System.out.println("Size de results avant l'ajout de résultats: " + this.resultTable.size());
         if(this.resultTable.size() == 0) {
             resultTable = rtToAdd;
             return this;
@@ -126,7 +132,7 @@ public class AortaResults {
         this.resultTable.updateResults();
         */
         
-        System.out.println("Size de results à la fin : " + this.resultTable.size());
+        System.out.println("Size de results après l'ajout de résultats : " + this.resultTable.size());
         return this;
     }
     
@@ -147,10 +153,16 @@ public class AortaResults {
      * @param path chemin du dossier
      */
     public void save(String path) {
+        
+        path = Main_Window.outputDir() + path;
+        File file  = new File(path);
+        file.mkdirs();
+        
         //On sauvegarde les ResultsTable
         this.resultTable.save(path+"\\resultsTable");
         
         //On sauvegarde la ROI
+        
         RoiEncoder.save(roi, path+"\\roi");
         
         

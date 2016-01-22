@@ -5,8 +5,6 @@
 package QuantIF_Project.serie;
 
 import QuantIF_Project.patient.AortaResults;
-import QuantIF_Project.patient.AortaResults;
-import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
 import QuantIF_Project.serie.Block;

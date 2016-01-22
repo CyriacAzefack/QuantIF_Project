@@ -1,0 +1,5 @@
+{
+	"Input" : "C:\\Users\\kamelya\\Documents\\QuantIF_Project\\Test Multi acquisitions\\",
+	"Output" : "C:\\Users\\kamelya\\Documents\\NetBeansProjects\\QuantIF_Project\\tmp\\",
+	"path JRE": "C:\\Users\\kamelya\\Documents\\NetBeansProjects\\QuantIF_Project\\tmp\\"
+}

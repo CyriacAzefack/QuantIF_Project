@@ -38,7 +38,7 @@ public final class DicomImage implements Comparable<DicomImage> {
     private final AttributeList attributeList;
 
     /**
-     * Chemin vers le fichier DICOM
+     * fichier DICOM
      */
     private final File dicomFile;
 
@@ -48,7 +48,7 @@ public final class DicomImage implements Comparable<DicomImage> {
     private ImagePlus imgPlus;
 
     /**
-     * Index de la coupe temporelle dans laquelle se trouve l'image
+     * Index(numéro) de la frame (dans laquelle se trouve l'image)
      */
     private int timeSlice;
 
@@ -164,7 +164,7 @@ public final class DicomImage implements Comparable<DicomImage> {
     }
 
     /**
-     * Transforme l'image en BufferedImage
+     * Transforme l'image en BufferedImage (Pour l'affichage)
      * @return BufferedImage
      */
     public BufferedImage getBufferedImage() {
@@ -206,7 +206,7 @@ public final class DicomImage implements Comparable<DicomImage> {
     
     /**
      * 
-     * @return Index de l'image dans la coupe temporelle
+     * @return La position spatiale dans la frame (image 1/74)
      */
     public int getStackIndex() {
         return this.stackIndex;
@@ -220,6 +220,10 @@ public final class DicomImage implements Comparable<DicomImage> {
         return this.attributeList;
     }
     
+    /**
+     * Gestion des ROI et de la LUT (ParaPET)
+     * @return 
+     */
     public ImagePlus getImagePlus() {
         return this.imgPlus;
     }

@@ -4,6 +4,7 @@
  */
 package QuantIF_Project.patient;
 
+import QuantIF_Project.gui.Main_Window;
 import QuantIF_Project.gui.PatientSerieViewer;
 import QuantIF_Project.serie.Serie;
 import QuantIF_Project.serie.DicomImage;
@@ -49,7 +50,7 @@ public class PatientMultiSeries {
      */
     private AortaResults aortaResults;
     
-    private int startSummIndex, endSummIndex;
+   
     
     /**
      * Champs permettant de déterminer si on affaire au même patient
@@ -112,14 +113,15 @@ public class PatientMultiSeries {
         System.out.println("*************************");
         System.out.println("* DEBUT SELECTION AORTE *");
         System.out.println("*************************");
-        this.startSummIndex = startIndex;
-        this.endSummIndex = endIndex;
+        
 
         Roi roi = PatientSerieViewer.getRoi();
         if (roi == null)
              JOptionPane.showMessageDialog(null, "Aucune ROI dessinée.\nVeuillez tracer une ROI autour de l'aorte.");
-        else
-            this.startTEPSerie.selectAorta(roi, startSummIndex, endSummIndex);
+        else {
+            Main_Window.println("Segmentation Aorte pour la série dynamique de départ!");
+            this.startTEPSerie.selectAorta(roi, startIndex, endIndex);
+        }
     }
     
     /**
@@ -147,7 +149,7 @@ public class PatientMultiSeries {
         System.out.println("Roi selectionnée...");
         //On ajoute les résultats pour la série TEP de départ
         addResults(this.startTEPSerie.getAortaResults());
-        System.out.println("Résultats de la série dynamique 1 ajoutées...");
+        System.out.println("Résultats de la série dynamique de départ ajoutées...");
         
         //On demande à l'utilisateur s'il veut inclure la série TAP dans le tracé
         // de la courbe artérielle
@@ -158,6 +160,7 @@ public class PatientMultiSeries {
             //On fait les calculs pour la série TAP
             this.staticTAPSerie.selectAorta(roi, 0, 0);
             //On ajoute les résultats pour la série statique TAP
+            
             addResults(this.staticTAPSerie.getAortaResults());
             System.out.println("Résultats de la série statique ajoutées...");
         }
@@ -173,8 +176,8 @@ public class PatientMultiSeries {
         this.aortaResults.display(this.startTEPSerie.getPixelUnity());
         
         
-        this.aortaResults.save("tmp\\aortaResults");
-        System.out.println("Résultats d'aortes sauvegardées dans \"tmp\\aortaResults\"");
+        this.aortaResults.save("aortaResults\\");
+        System.out.println("Résultats d'aortes sauvegardées dans \"outputDir\\aortaResults\"");
     }
 
     private void setParent() {
