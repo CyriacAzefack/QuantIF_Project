@@ -56,6 +56,8 @@ public class PatientMultiSeries {
      */
     private final String[] tagsToCheck;
     
+    private final boolean copyRoi;
+    
 
     /**
      * Construit une série patient à l'aide de plusieurs acquisitions
@@ -81,7 +83,7 @@ public class PatientMultiSeries {
         
         this.tagsToCheck = new String [3];
        
-            
+        copyRoi = true;
        
 
         
@@ -118,8 +120,9 @@ public class PatientMultiSeries {
         Roi roi = PatientSerieViewer.getRoi();
         if (roi == null)
              JOptionPane.showMessageDialog(null, "Aucune ROI dessinée.\nVeuillez tracer une ROI autour de l'aorte.");
-        else
+        else {
             this.startTEPSerie.selectAorta(roi, startSummIndex, endSummIndex);
+        }
     }
     
     /**
@@ -152,9 +155,24 @@ public class PatientMultiSeries {
         //On demande à l'utilisateur s'il veut inclure la série TAP dans le tracé
         // de la courbe artérielle
         
-        int dialogResult = JOptionPane.showConfirmDialog(null, "Utiliser la série TAP pour le tracé de Cb(t)?","Warning", JOptionPane.YES_NO_OPTION);
+        int includeTAPSerie = JOptionPane.showConfirmDialog(null, "Utiliser la série TAP pour le tracé de Cb(t)?","Warning", JOptionPane.YES_NO_OPTION);
         
-        if (dialogResult == JOptionPane.YES_OPTION) {
+        //On demande à l'utilisateur si il veut copier la ROI de la série de départ sur 
+        //  la série TAP et la série dynamique de fin ou si il veut en tracer une nouvelle
+        
+        int drawROI = JOptionPane.showOptionDialog(null, 
+                                                    "Voulez vous conserver la ROI de départ pour les séries TAP et dynamique de fin?", 
+                                                    "Roi", 
+                                                    JOptionPane.OK_CANCEL_OPTION, 
+                                                    JOptionPane.INFORMATION_MESSAGE, 
+                                                    null, 
+                                                    new String[]{"Oui", "Non. Tracer une nouvelle ROI"}, 
+                                                    "default");
+        if (drawROI != JOptionPane.YES_OPTION) {
+            System.out.println("On doit dessiner une autre ROI!!!");
+        }
+        
+        if (includeTAPSerie == JOptionPane.YES_OPTION) {
             //On fait les calculs pour la série TAP
             this.staticTAPSerie.selectAorta(roi, 0, 0);
             //On ajoute les résultats pour la série statique TAP

@@ -4,6 +4,7 @@
  */
 package QuantIF_Project.serie;
 
+import QuantIF_Project.gui.Main_Window;
 import QuantIF_Project.patient.AortaResults;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
@@ -15,27 +16,20 @@ import QuantIF_Project.utils.DicomUtils;
 import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
-import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.WindowManager;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
-import java.awt.BorderLayout;
-import java.awt.Window;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseWheelEvent;
+import ij.process.ImageProcessor;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JButton;
 
 
 
@@ -157,6 +151,8 @@ public class TEPSerie implements Serie{
             this.nbImagesPerTimeFrame = 0;
 
             this.directoryPath = dirPath;
+            
+            //On récupère tous les fichiers DICOM dans le repertoire
             this.dicomImages = DicomUtils.checkDicomImages(dirPath);
 
             //On récupère les paramètres du patient sur le premier fichier
@@ -184,11 +180,16 @@ public class TEPSerie implements Serie{
             this.serieStartDate = dicomImages.get(0).getAttribute(TagFromName.StudyDate) + " " + dicomImages.get(0).getAttribute(TagFromName.StudyTime);
 
             this.timeFrames = new ArrayList<>(this.nbTimeFrames);
+            
+            //On range les images DICOM dans les frame
             checkTimeFrames();
+            
             this.summALL = this.summSlices(0, this.nbTimeFrames-1);
+            
             this.aortaResults = null;
             
             this.parent = null;  
+            
             this.isFirstInMultiAcq = false;
             
 
@@ -260,33 +261,34 @@ public class TEPSerie implements Serie{
         
         /**
          * Parcourt la liste des dicomImages et on les range dans les time frames
-         * @param dicomImages 
+         * 
          */
         private void checkTimeFrames() {
-            //On récupère la liste des acquisition time
-            ArrayList<String> ATList = new ArrayList<>();
-            String AT;
+            //On récupère la liste des acquisition time (si 7 acqTime différetn, tableau de 7 cases)
+            ArrayList<String> acqTimeList = new ArrayList<>();
+            String acqTime;
             for (DicomImage di : dicomImages) {
-                AT = di.getAttribute(TagFromName.AcquisitionTime);
-                if (!ATList.contains(AT))
-                    ATList.add(AT);
+                acqTime = di.getAttribute(TagFromName.AcquisitionTime);
+                if (!acqTimeList.contains(acqTime))
+                    acqTimeList.add(acqTime);
             }
             
-            ATList.sort(null);
+            acqTimeList.sort(null); //Tri acqTime dans l'ordre chonologique
             
-            //On crée tous les TimeFrame
-            ATList.stream().forEach((at) -> {
+            //On crée tous les TimeFrame vides
+            acqTimeList.stream().forEach((acqTim) -> {
                 try {
-                    this.timeFrames.add(new TimeFrame(this.nbImagesPerTimeFrame, at, this.width, this.height));
+                    this.timeFrames.add(new TimeFrame(this.nbImagesPerTimeFrame, acqTim, this.width, this.height));
                 } catch (BadParametersException ex) {
                     Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
                 }
             });
             
+            //On range les dicomImages dans les timeFrame
             for (DicomImage di : this.dicomImages) {
                 try {
-                    AT = di.getAttribute(TagFromName.AcquisitionTime);
-                    int index = ATList.indexOf(AT);
+                    acqTime = di.getAttribute(TagFromName.AcquisitionTime);
+                    int index = acqTimeList.indexOf(acqTime);
                     this.timeFrames.get(index).addDicomImage(di);
                 } catch (BadParametersException | ImageSizeException | TimeFrameOverflowException ex) {
                     Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
@@ -299,7 +301,7 @@ public class TEPSerie implements Serie{
                 tf.setTime();
             });
             
-            System.out.println(this.timeFrames.size() + " Coupes détectées!!");
+            System.out.println(this.timeFrames.size() + " Coupes temporelles détectées!!");
             this.nbTimeFrames = this.timeFrames.size();
             
         }
@@ -527,204 +529,73 @@ public class TEPSerie implements Serie{
     }
     
     /**
-     * Trace les contours de la ROI et calcule la moyenne pour toutes les frames
-     * @param roi
-     * @param startIndex indice de la frame de début pour la somme 
-     * @param endIndex indice de la frame de fin pour la somme 
+     * Calcule la moyenne dans la ROI pour toutes les frames
+     * @param roi Zone sélectionnée
+     * @param startFrameIndex indice de la frame de début pour la somme 
+     * @param endFrameIndex indice de la frame de fin pour la somme 
      */
         @Override
-    public void selectAorta(Roi roi, int startIndex, int endIndex)  {
+    public void selectAorta(Roi roi, int startFrameIndex, int endFrameIndex)  {
         
-        ImageStack imgStack = new ImageStack(this.width, this.height, null);
-
-        //On fait la somme des Coupes allant de "startIndex" à "endIndex"
-        FloatProcessor imgProc;
-        ImagePlus summAll;
-        float[][] summSlices;
-      
-        summSlices = this.summALL;
+        //On récupère la position de l'image sur laquelle a été tracée la ROI
+        int imageIndex = roi.getPosition();
         
+        //Tableau contenant tous les images étant à l'index "imageIndex" pour toutes
+        //  les frames allant de "startFrameIndex" à "endFrameIndex"
+        ArrayList<ImageProcessor> imagesAtImageIndex = new ArrayList<>();
         
-
-        
-        //On parcout la liste des images pour les chargés dans le stack
-        for (float[] pixels : summSlices) {
-
-
-            imgProc = new FloatProcessor(width, height, pixels);
-            imgStack.addSlice(imgProc);
+        if (endFrameIndex == 0) { // On prend tous
+            endFrameIndex = this.nbTimeFrames - 1;
         }
         
-        //Ensemble des images résultantes de la somme
-        summAll = new ImagePlus("", imgStack);
-
-
-        //On cree les stacks des images non sommés
-        ImagePlus[] framesStack = new ImagePlus[this.nbImagesPerTimeFrame];
-        //à la position i, on aura un stack composé de tous les images d'indice i de chaque coupe temporelle
-        for (int imageIndex = 0; imageIndex < this.nbImagesPerTimeFrame; imageIndex++) {
-            //On doit recupérer toutes les images  à la frameIndex dans tous les coupes temporelles
-            ImageStack stack = new ImageStack(width, height);
-           
-            //on parcourt toutes les coupes temporelles
-            for (int sliceIndex = 0; sliceIndex < this.nbTimeFrames; sliceIndex++) {
-                try {
-                    DicomImage dcm  = this.timeFrames.get(sliceIndex).getDicomImage(imageIndex);
-                    
-                    if (dcm != null) {
-                        stack.addSlice(dcm.getImageProcessor());
-                    }
-                    else {
-                        FloatProcessor sp = new FloatProcessor(width, height);
-                        stack.addSlice(sp);
-                        
-                    }
-                } catch (BadParametersException ex) {
-                    Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-            framesStack[imageIndex] = new ImagePlus("", stack);
-        }
+        //On rempli le tableau en parcourant les frames
         
-        
-        
-        if (roi == null) {
-            //on trace la roi et on calcule les résultats
-            roiSelection(summAll, framesStack);
-            
-            
-        }
-        else {
+        for (int frameIndex = startFrameIndex; frameIndex <= endFrameIndex; frameIndex++) {
             try {
-                //On calcule les résultats à l'aide de cette Roi
-
-                getRoiResults(roi, summAll, framesStack);
-                
-                //On avertit la multi série que la ROI a été sélectionner donc on peut commencer les calculs pour les autres séries
-                if (this.parent != null && this.isFirstInMultiAcq)
-                    this.parent.roiSelected(roi);
+                DicomImage di = this.timeFrames.get(frameIndex).getDicomImage(imageIndex);
+                imagesAtImageIndex.add(di.getImageProcessor());
             } catch (BadParametersException ex) {
                 Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-
+        
+        
+        RoiManager roiManager = new RoiManager(true); //S'occupe de la gestion des ROI et des images (Outil ImageJ)
+        
+        roiManager.addRoi(roi);
+        
+        System.out.println("Selected ROI position : " + roi.getPosition());
+        
        
-
+        ImagePlus imagesList; //Liste des images sur lesquelles on vas faire le calcul. Type de données acceptées par le roiManager //(Outil ImageJ)
+        
+        ImageStack stackImages = new ImageStack(width, height);
+        imagesAtImageIndex.stream().forEach((ip) -> {
+            stackImages.addSlice(ip);
+        });
+        
+        imagesList = new ImagePlus("", stackImages);
+            
+        
+        
+        
+        
+        roiManager.select(0); //On selectionne la roi qu'on vient d'ajouter
+        
+        //on fait de la muti- mesure sur la roi
+        ResultsTable multiMeasure = roiManager.multiMeasure(imagesList);
+        
+        //On crée les resultats
+        createResults(roi, multiMeasure, startFrameIndex, endFrameIndex);
+        
+        
+        //Si on est le premier dans une multi-acquisition
+        if (this.isPartOfMultAcq && this.isFirstInMultiAcq)
+            //On averti le parent de lancer la sélection d'aorte pour les autres séries
+            this.parent.roiSelected(roi);
             
     }
     
-    /**
-     * Affiche l'interface pour la selection d'une ROI et fait le calcul de la moyenne dans la roi
-     * @param summAll stack composé de la somme de toutes les images
-     * @param framesStack tableau de stack, à la position i on a un stack est composé des images d'index i de chaque coupe temporelle
-     * @param timeArray tableau des valeurs des temps d'acquisition des coupes temporelles
-     */
-    private void roiSelection(ImagePlus summAll, ImagePlus[] framesStack) {
-        //On affiche la série d'images 
-        summAll.setTitle("Série Dynamique TEP de départ -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
-        summAll.show();
-        
-        
-        //On recupère la fenêtre d'affichage
-        Window imgPlusWindow = WindowManager.getWindow(summAll.getTitle());
-        
-        //On y ajoute la gestion du ZOOM
-        imgPlusWindow.addMouseWheelListener((MouseWheelEvent e) -> {
-            int zoom = e.getWheelRotation();
-            
-            if (zoom < 0 && e.isControlDown()) {
-                IJ.run("To Selection");
-            } 
-            else if (zoom > 0 && e.isControlDown()){
-                IJ.run("Out");
-            }
-        });
-        
-        //GESTION DU DESSIN DE LA ROI
-        RoiManager roiManager = new RoiManager();
-        
-        //Bouton de calcul
-        JButton compileAndDisplayButton = new JButton();
-        compileAndDisplayButton.setSize(100, 100);
-        compileAndDisplayButton.setVisible(true);
-        
-        //On défini l'action du bouton
-        compileAndDisplayButton.addActionListener( new java.awt.event.ActionListener() {
-            private ImagePlus[] framesStack;
-           
-            private Roi roi;
-            private int pressed;
-            
-            @Override
-            
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-               
-               //Lorsqu'on appui sur le boutton
-                if (roiManager.getCount() > 0) { 
-                    System.out.println("#########################");
-                    System.out.println("*  AFFICHER RESULTATS   *");
-                    System.out.println("#########################");
-                    
-                        //On vérifie qu'une ROI a été ajoutée
-                        this.pressed ++;
-                        System.out.println("Selected Rois Array : " + Arrays.toString(roiManager.getSelectedRoisAsArray()));
-                        roi = roiManager.getSelectedRoisAsArray()[0];
-
-                        //On doit faire la multi mesure sur la bonne stack d'image
-                        //
-                        RoiManager subRoiManager = new RoiManager(true);
-                        //subRoiManager.runCommand("reset");
-                        System.out.println("Roi roi : " + roi);
-                        System.out.println("Position roi : " + roi.getPosition());
-                        
-                       
-                        ImagePlus stack = this.framesStack[roi.getPosition()-1];
-                           
-                      
-
-
-                        subRoiManager.addRoi(roi);
-                        subRoiManager.select(0);
-                        //on fait de la muti- mesure sur la roi
-                        ResultsTable multiMeasure = subRoiManager.multiMeasure(stack);
-                       //System.out.println("Summ ALL Processor position 1 : " + summAll.getStack().getProcessor(1).toString());
-                       //roi.getImage().show();
-                       System.out.println("ID Image liée à la ROI : " + roi.getImage());
-                       /*
-                        if (summAll.getStack().getProcessor(roi.getPosition()) == roi.getImage().getProcessor()) {
-                            System.out.println("La roi a été sélectionné sur la série d'image courante");
-                        }
-                        else {
-                            System.out.println("La roi a été sélectionné sur une série autre que la série courante");
-                        }
-                       */
-                        createResults(roi, multiMeasure,  summAll.getTitle());
-
-                        if (!isPartOfMultiAcq())
-                            plotResults();
-                        
-                    
-                    
-                            
-                }
-            }
-            
-            private ActionListener init(ImagePlus[] fStack) {
-                this.framesStack = fStack;
-               
-               
-                this.pressed = 0;
-                System.out.println("Init button done");
-                return this;
-            }
-        }.init(framesStack));
-        compileAndDisplayButton.setText("Afficher les résultats");
-      
-        
-        Window roiManagerWindow = WindowManager.getWindow("ROI Manager"); 
-        
-        roiManagerWindow.add(compileAndDisplayButton, BorderLayout.SOUTH);           
-    }
     
     /**
      * Renvoie true si ce patient fait partie d'une multi acquisition
@@ -744,104 +615,32 @@ public class TEPSerie implements Serie{
      * Construit les résultats de l'aorte
      * @param roi roi dessiné sur summALL
      * @param resultTable résultats liés à cette ROI
-     * @param timeAxis l'axe des temps
+     * 
      */
-    private void createResults(Roi roi, ResultsTable resultTable, String imageTitle) {
+    private void createResults(Roi roi, ResultsTable resultTable, int startFrameIndex, int endFrameIndex) {
         //on ajoute la liste des acquisition times a resultTable
         int resultTableSize = resultTable.getColumnAsDoubles(0).length;
         System.out.println("Size of ResultsTable : " + resultTableSize );
        
         //On parcourt les lignes du tableaux pour ajouter les valeur de temps
         for (int row = 0; row < resultTableSize; row++) {
-            resultTable.setValue("Start Time(sec)", row, this.timeFrames.get(row).getStartTime());
-            resultTable.setValue("Mid time (sec)", row, this.timeFrames.get(row).getMidTime());
-            resultTable.setValue("End Time(sec)", row, this.timeFrames.get(row).getEndTime());
+            resultTable.setValue("Start Time(sec)", row, this.timeFrames.get(row+startFrameIndex).getStartTime());
+            resultTable.setValue("Mid time (sec)", row, this.timeFrames.get(row+startFrameIndex).getMidTime());
+            resultTable.setValue("End Time(sec)", row, this.timeFrames.get(row+startFrameIndex).getEndTime());
             
             
         }
         
         this.aortaResults = new AortaResults(this.name, roi, resultTable);
         
-        
-        
-        
-        //On dessine sur l'image la ROI utilisée pour le calul
-        ImagePlus impROI = WindowManager.getImage(imageTitle);
-        impROI.setRoi(roi);
-        
         //On affiche les résultats si la série est unique (ne fait pas partie d'une acquisition multiple)
         if (!isPartOfMultAcq)
             this.aortaResults.display("PROPCPS");
         
         
-        
     }
     
-    /**
-     * calcul la courbe pour une ROI fournie
-     * @param selectedRoi roi sur lequel s'effectuera le calcul
-     * @param imgPlus stack composé de la somme de toutes les images
-     * @param framesStack tableau de stack, à la position i on a un stack est composé des images d'index i de chaque coupe temporelle
-     *
-     */
-    private void getRoiResults(Roi roi, ImagePlus summAll, ImagePlus[] framesStack) throws BadParametersException {
-         //On récupère la série d'images dynamique affichée
-        ImagePlus impROI = WindowManager.getImage("Série Dynamique TEP de fin -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
-       
-        //Si elle n'est pas affichée, on l'affiche
-        
-        if (impROI == null) {
-           
-          
-            summAll.setTitle("Série Dynamique TEP de fin -- " + this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame);
-           
-           
-            impROI = summAll;
-            System.out.println("***RESET AFFICHAGE "+this.nbTimeFrames + "x" + this.nbImagesPerTimeFrame+"****");
-            
-            impROI.show();
-        }
-        Roi selectedRoi = roi;
-       
-        //On recupére la ROI dessinée sur la série si il y en a une
-        if (impROI.getRoi() != null) {
-            selectedRoi = impROI.getRoi();
-            
-            
-            
-        }
-        
-        
-        
-        //summAll.setRoi(selectedRoi, true);
-        
-        
-        //On recupère la fenêtre d'affichage
-        Window imgPlusWindow = WindowManager.getWindow(summAll.getTitle());
-        
-        
-        
-        RoiManager roiManager = new RoiManager(true); //true -> Ce roimanager ne s'affiche pas
-        
-        roiManager.addRoi(selectedRoi);
-        System.out.println("Selected ROI position : " + selectedRoi.getPosition());
-        
-       
-        ImagePlus stack = framesStack[selectedRoi.getPosition()];
-            
-        
-        //ImagePlus stackFrame = framesStack[selectedRoi.getPosition()-1];
-        
-        
-        roiManager.select(0); //On selectionne la roi qu'on vient d'ajouter
-        //on fait de la muti- mesure sur la roi
-        ResultsTable multiMeasure = roiManager.multiMeasure(stack);
-        
-        //On crée les resultats
-        createResults(selectedRoi, multiMeasure, impROI.getTitle());
-        
-         
-    }
+    
     
      
 
@@ -894,14 +693,14 @@ public class TEPSerie implements Serie{
      * 
      */
     public double getPatientInjectedDose() {
-        double dose = 58;
+        double dose = 0;
         try {
             DicomImage dcm = this.timeFrames.get(0).getDicomImage(2);
-            dose = Double.parseDouble(dcm.getAttribute(TagFromName.RadionuclideTotalDose));
+            dose = Double.parseDouble(dcm.getAttribute(TagFromName.RadionuclideTotalDose)); //En Bq
         } catch (BadParametersException ex) {
             Logger.getLogger(TEPSerie.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        dose /= 1E6;
         return dose;
                 
     }

@@ -35,7 +35,8 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
-import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
@@ -45,6 +46,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ButtonGroup;
 import javax.swing.ComboBoxModel;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
 
@@ -123,7 +125,9 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     /**
      * Taille de l'image affichée
      */
-    public final static int IMAGE_SIZE = 600;
+    public static int IMAGE_WIDTH; 
+    
+    public static int IMAGE_HEIGHT; 
     
     public static int width;
     
@@ -147,13 +151,17 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         width = p.getWidth();
         height = p.getHeight();
         
+        IMAGE_WIDTH = 800;
+        IMAGE_HEIGHT = 800;
+        
+        
         patientMultiSeries = null;
         
         this.radioButtonDyn1.setVisible(false);
         this.radioButtonStat.setVisible(false);
         this.radioButtonDyn2.setVisible(false);
         
-        this.continueButton.setVisible(false);
+       
         
         //Image Panel settings
         imagePanel.removeAll();
@@ -162,7 +170,8 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
        
         currentImagePlus.show();
         
-        
+        System.out.println("###################");
+        System.out.println("IMAGE SIZE = " + IMAGE_WIDTH + " x " + IMAGE_HEIGHT);
         
         WindowManager.setTempCurrentImage(currentImagePlus);
         Frame frame = WindowManager.getCurrentWindow(); //getFrame(currentImageTitle);
@@ -173,7 +182,9 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         
         //On affiche l'image dans le panel
         //System.out.println(comp.toString());
-        this.imagePanel.add(canvas, BorderLayout.CENTER);
+        
+        
+        imagePanel.add(canvas);
         
         
          //On y ajoute la gestion du ZOOM
@@ -205,7 +216,14 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
 
         for (MouseMotionListener listener: motionListeners)
             northPane.removeMouseMotionListener(listener);
-   
+        
+        
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                display(currentImageID);
+            }
+        });
         
         
      
@@ -243,35 +261,43 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        java.awt.GridBagConstraints gridBagConstraints;
 
         maskFileChooser = new javax.swing.JFileChooser();
         popUpMenu = new javax.swing.JPopupMenu();
         saveImages = new javax.swing.JMenuItem();
         applyLUT = new javax.swing.JMenuItem();
+        LeftButtonsPanel = new javax.swing.JPanel();
+        tridimObsButton = new javax.swing.JButton();
+        selectAorta = new javax.swing.JButton();
+        allImagePanel = new javax.swing.JPanel();
+        imagePanel = new javax.swing.JPanel();
+        imageTitle = new javax.swing.JTextField();
+        imageOptionsPanel = new javax.swing.JPanel();
+        imageIDTextField = new javax.swing.JTextField();
+        changeImage = new javax.swing.JPanel();
+        prevButton = new javax.swing.JButton();
+        imageSlider = new javax.swing.JSlider();
+        nextButton = new javax.swing.JButton();
+        tempsAcq = new javax.swing.JPanel();
+        jLabel4 = new javax.swing.JLabel();
+        acquisitionTimeTextField = new javax.swing.JTextField();
+        rightButtonsPanel = new javax.swing.JPanel();
+        sliders = new javax.swing.JPanel();
+        sliderMax = new javax.swing.JSlider();
+        sliderMin = new javax.swing.JSlider();
+        framesOptions = new javax.swing.JPanel();
         labelSliceList = new javax.swing.JLabel();
         summ1 = new javax.swing.JComboBox();
         summ2 = new javax.swing.JComboBox();
         jLabel8 = new javax.swing.JLabel();
         summButton = new javax.swing.JToggleButton();
-        sliderMin = new javax.swing.JSlider();
+        frameList = new javax.swing.JComboBox();
+        seriesChoice = new javax.swing.JPanel();
         saveSummsButton = new javax.swing.JButton();
-        radioButtonDyn2 = new javax.swing.JRadioButton();
         radioButtonDyn1 = new javax.swing.JRadioButton();
         radioButtonStat = new javax.swing.JRadioButton();
-        imagePanel = new javax.swing.JPanel();
-        imageOptionsPanel = new javax.swing.JPanel();
-        nextButton = new javax.swing.JButton();
-        prevButton = new javax.swing.JButton();
-        imageSlider = new javax.swing.JSlider();
-        imageIDTextField = new javax.swing.JTextField();
-        acquisitionTimeTextField = new javax.swing.JTextField();
-        jLabel4 = new javax.swing.JLabel();
-        selectAorta = new javax.swing.JButton();
-        tridimObsButton = new javax.swing.JButton();
-        frameList = new javax.swing.JComboBox();
-        sliderMax = new javax.swing.JSlider();
-        imageTitle = new javax.swing.JTextField();
-        continueButton = new javax.swing.JButton();
+        radioButtonDyn2 = new javax.swing.JRadioButton();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -299,112 +325,67 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
             e1.printStackTrace();
         }
         setVisible(true);
-        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().setLayout(new java.awt.BorderLayout(50, 100));
 
-        labelSliceList.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
-        labelSliceList.setText("Coupe temporelle");
-        getContentPane().add(labelSliceList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 180, 170, 20));
+        LeftButtonsPanel.setLayout(new java.awt.GridLayout(5, 1, 10, 50));
 
-        summ1.addActionListener(new java.awt.event.ActionListener() {
+        tridimObsButton.setBackground(new java.awt.Color(204, 255, 255));
+        tridimObsButton.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
+        tridimObsButton.setText("3D Viewer");
+        tridimObsButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        tridimObsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                summ1ActionPerformed(evt);
+                tridimObsButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(summ1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1220, 230, -1, -1));
+        LeftButtonsPanel.add(tridimObsButton);
 
-        getContentPane().add(summ2, new org.netbeans.lib.awtextra.AbsoluteConstraints(1360, 230, -1, -1));
-
-        jLabel8.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
-        jLabel8.setText("à");
-        getContentPane().add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(1320, 230, 10, 20));
-
-        summButton.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
-        summButton.setText("Sommer");
-        summButton.addActionListener(new java.awt.event.ActionListener() {
+        selectAorta.setBackground(new java.awt.Color(51, 102, 255));
+        selectAorta.setFont(new java.awt.Font("sansserif", 1, 14)); // NOI18N
+        selectAorta.setForeground(new java.awt.Color(255, 255, 255));
+        selectAorta.setText("<html>Sélectionner Aorte</html>");
+        selectAorta.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        selectAorta.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                summButtonActionPerformed(evt);
+                selectAortaActionPerformed(evt);
             }
         });
-        getContentPane().add(summButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 220, 110, 40));
+        LeftButtonsPanel.add(selectAorta);
 
-        sliderMin.setMaximum(100000);
-        sliderMin.setSnapToTicks(true);
-        sliderMin.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED), "Min", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("sansserif", 1, 12), java.awt.Color.blue)); // NOI18N
-        sliderMin.setValueIsAdjusting(true);
-        sliderMin.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                sliderMinStateChanged(evt);
-            }
-        });
-        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 79, 570, 60));
+        getContentPane().add(LeftButtonsPanel, java.awt.BorderLayout.WEST);
 
-        saveSummsButton.setText("Sauvegarder toutes les images sommées");
-        saveSummsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                saveSummsButtonActionPerformed(evt);
-            }
-        });
-        getContentPane().add(saveSummsButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1110, 630, 320, 100));
+        allImagePanel.setLayout(new java.awt.BorderLayout());
 
-        radioButtonDyn2.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
-        radioButtonDyn2.setText("Série Dynamique de fin");
-        radioButtonDyn2.setEnabled(false);
-        radioButtonDyn2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                radioButtonDyn2ActionPerformed(evt);
-            }
-        });
-        getContentPane().add(radioButtonDyn2, new org.netbeans.lib.awtextra.AbsoluteConstraints(1070, 350, 250, 40));
-
-        radioButtonDyn1.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
-        radioButtonDyn1.setText("Serie Dynamique de départ");
-        radioButtonDyn1.setEnabled(false);
-        radioButtonDyn1.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                radioButtonDyn1StateChanged(evt);
-            }
-        });
-        radioButtonDyn1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                radioButtonDyn1ActionPerformed(evt);
-            }
-        });
-        getContentPane().add(radioButtonDyn1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1070, 290, 270, 40));
-
-        radioButtonStat.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
-        radioButtonStat.setText("Série Statique");
-        radioButtonStat.setEnabled(false);
-        radioButtonStat.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                radioButtonStatStateChanged(evt);
-            }
-        });
-        radioButtonStat.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                radioButtonStatActionPerformed(evt);
-            }
-        });
-        getContentPane().add(radioButtonStat, new org.netbeans.lib.awtextra.AbsoluteConstraints(1070, 320, 210, 40));
-
-        imagePanel.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 153), 3, true));
-        imagePanel.setPreferredSize(new Dimension(IMAGE_SIZE, IMAGE_SIZE));
+        imagePanel.setBorder(null);
+        imagePanel.setMaximumSize(new java.awt.Dimension(800, 800));
         imagePanel.setRequestFocusEnabled(false);
         imagePanel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseReleased(java.awt.event.MouseEvent evt) {
                 imagePanelMouseReleased(evt);
             }
         });
-        imagePanel.setLayout(new javax.swing.BoxLayout(imagePanel, javax.swing.BoxLayout.LINE_AXIS));
-        getContentPane().add(imagePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(300, 50, 600, 600));
+        imagePanel.setLayout(new java.awt.GridBagLayout());
+        allImagePanel.add(imagePanel, java.awt.BorderLayout.CENTER);
 
-        nextButton.setBackground(java.awt.Color.cyan);
-        nextButton.setFont(new java.awt.Font("Wide Latin", 1, 14)); // NOI18N
-        nextButton.setText(">>");
-        nextButton.addActionListener(new java.awt.event.ActionListener() {
+        imageTitle.setEditable(false);
+        imageTitle.setBackground(new java.awt.Color(229, 90, 120));
+        imageTitle.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
+        allImagePanel.add(imageTitle, java.awt.BorderLayout.NORTH);
+
+        imageOptionsPanel.setLayout(new java.awt.BorderLayout());
+
+        imageIDTextField.setEditable(false);
+        imageIDTextField.setBackground(new java.awt.Color(153, 255, 255));
+        imageIDTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        imageIDTextField.setText("               ");
+        imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                nextButtonActionPerformed(evt);
+                imageIDTextFieldActionPerformed(evt);
             }
         });
+        imageOptionsPanel.add(imageIDTextField, java.awt.BorderLayout.NORTH);
+
+        changeImage.setLayout(new java.awt.BorderLayout());
 
         prevButton.setBackground(java.awt.Color.cyan);
         prevButton.setFont(new java.awt.Font("Wide Latin", 0, 12)); // NOI18N
@@ -414,6 +395,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 prevButtonActionPerformed(evt);
             }
         });
+        changeImage.add(prevButton, java.awt.BorderLayout.WEST);
 
         imageSlider.setPaintLabels(true);
         imageSlider.setPaintTicks(true);
@@ -429,16 +411,24 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 imageSliderStateChanged(evt);
             }
         });
+        changeImage.add(imageSlider, java.awt.BorderLayout.CENTER);
 
-        imageIDTextField.setEditable(false);
-        imageIDTextField.setBackground(new java.awt.Color(153, 255, 255));
-        imageIDTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        imageIDTextField.setText("               ");
-        imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
+        nextButton.setBackground(java.awt.Color.cyan);
+        nextButton.setFont(new java.awt.Font("Wide Latin", 1, 14)); // NOI18N
+        nextButton.setText(">>");
+        nextButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                imageIDTextFieldActionPerformed(evt);
+                nextButtonActionPerformed(evt);
             }
         });
+        changeImage.add(nextButton, java.awt.BorderLayout.EAST);
+
+        imageOptionsPanel.add(changeImage, java.awt.BorderLayout.CENTER);
+
+        tempsAcq.setLayout(new javax.swing.BoxLayout(tempsAcq, javax.swing.BoxLayout.X_AXIS));
+
+        jLabel4.setText("Temps d'acquisition (secondes)");
+        tempsAcq.add(jLabel4);
 
         acquisitionTimeTextField.setEditable(false);
         acquisitionTimeTextField.setBackground(new java.awt.Color(204, 255, 255));
@@ -448,77 +438,17 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 acquisitionTimeTextFieldActionPerformed(evt);
             }
         });
+        tempsAcq.add(acquisitionTimeTextField);
 
-        jLabel4.setText("Temps d'acquisition (secondes)");
+        imageOptionsPanel.add(tempsAcq, java.awt.BorderLayout.SOUTH);
 
-        javax.swing.GroupLayout imageOptionsPanelLayout = new javax.swing.GroupLayout(imageOptionsPanel);
-        imageOptionsPanel.setLayout(imageOptionsPanelLayout);
-        imageOptionsPanelLayout.setHorizontalGroup(
-            imageOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(imageOptionsPanelLayout.createSequentialGroup()
-                .addComponent(prevButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(imageIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(234, 234, 234)
-                .addComponent(nextButton))
-            .addGroup(imageOptionsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(imageOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(imageOptionsPanelLayout.createSequentialGroup()
-                        .addComponent(jLabel4)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(acquisitionTimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(imageSlider, javax.swing.GroupLayout.DEFAULT_SIZE, 628, Short.MAX_VALUE))
-                .addContainerGap())
-        );
-        imageOptionsPanelLayout.setVerticalGroup(
-            imageOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(imageOptionsPanelLayout.createSequentialGroup()
-                .addGroup(imageOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(imageIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(nextButton)
-                    .addComponent(prevButton))
-                .addGap(18, 18, 18)
-                .addComponent(imageSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(imageOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(acquisitionTimeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
-        );
+        allImagePanel.add(imageOptionsPanel, java.awt.BorderLayout.SOUTH);
 
-        getContentPane().add(imageOptionsPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 650, 640, 120));
+        getContentPane().add(allImagePanel, java.awt.BorderLayout.CENTER);
 
-        selectAorta.setBackground(new java.awt.Color(51, 102, 255));
-        selectAorta.setFont(new java.awt.Font("sansserif", 1, 14)); // NOI18N
-        selectAorta.setForeground(new java.awt.Color(255, 255, 255));
-        selectAorta.setText("<html>Sélectionner Aorte</html>");
-        selectAorta.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        selectAorta.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                selectAortaActionPerformed(evt);
-            }
-        });
-        getContentPane().add(selectAorta, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 260, 230, 50));
+        rightButtonsPanel.setLayout(new java.awt.GridLayout(3, 1));
 
-        tridimObsButton.setBackground(new java.awt.Color(204, 255, 255));
-        tridimObsButton.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
-        tridimObsButton.setText("3D Viewer");
-        tridimObsButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        tridimObsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tridimObsButtonActionPerformed(evt);
-            }
-        });
-        getContentPane().add(tridimObsButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 180, 230, 60));
-
-        frameList.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                frameListActionPerformed(evt);
-            }
-        });
-        getContentPane().add(frameList, new org.netbeans.lib.awtextra.AbsoluteConstraints(1260, 170, -1, -1));
+        sliders.setLayout(new java.awt.GridLayout(2, 1));
 
         sliderMax.setMaximum(100000);
         sliderMax.setSnapToTicks(true);
@@ -529,17 +459,148 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
                 sliderMaxStateChanged(evt);
             }
         });
-        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1080, 9, 570, 60));
+        sliders.add(sliderMax);
 
-        imageTitle.setEditable(false);
-        imageTitle.setBackground(new java.awt.Color(229, 90, 120));
-        imageTitle.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
-        getContentPane().add(imageTitle, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 10, 310, 30));
+        sliderMin.setMaximum(100000);
+        sliderMin.setSnapToTicks(true);
+        sliderMin.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED), "Min", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("sansserif", 1, 12), java.awt.Color.blue)); // NOI18N
+        sliderMin.setValueIsAdjusting(true);
+        sliderMin.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                sliderMinStateChanged(evt);
+            }
+        });
+        sliders.add(sliderMin);
 
-        continueButton.setFont(new java.awt.Font("sansserif", 1, 18)); // NOI18N
-        continueButton.setText("Continuer");
-        continueButton.setEnabled(false);
-        getContentPane().add(continueButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1113, 540, 280, 80));
+        rightButtonsPanel.add(sliders);
+
+        labelSliceList.setFont(new java.awt.Font("Lucida Console", 1, 14)); // NOI18N
+        labelSliceList.setText("Coupe temporelle");
+
+        summ1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                summ1ActionPerformed(evt);
+            }
+        });
+
+        jLabel8.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
+        jLabel8.setText("à");
+
+        summButton.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
+        summButton.setText("Sommer");
+        summButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                summButtonActionPerformed(evt);
+            }
+        });
+
+        frameList.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                frameListActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout framesOptionsLayout = new javax.swing.GroupLayout(framesOptions);
+        framesOptions.setLayout(framesOptionsLayout);
+        framesOptionsLayout.setHorizontalGroup(
+            framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 310, Short.MAX_VALUE)
+            .addGroup(framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(framesOptionsLayout.createSequentialGroup()
+                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addGroup(framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(framesOptionsLayout.createSequentialGroup()
+                            .addComponent(labelSliceList, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(10, 10, 10)
+                            .addComponent(frameList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(framesOptionsLayout.createSequentialGroup()
+                            .addComponent(summButton, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(40, 40, 40)
+                            .addComponent(summ1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(64, 64, 64)
+                            .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(30, 30, 30)
+                            .addComponent(summ2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGap(0, 0, Short.MAX_VALUE)))
+        );
+        framesOptionsLayout.setVerticalGroup(
+            framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 406, Short.MAX_VALUE)
+            .addGroup(framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(framesOptionsLayout.createSequentialGroup()
+                    .addGap(0, 0, Short.MAX_VALUE)
+                    .addGroup(framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(framesOptionsLayout.createSequentialGroup()
+                            .addGap(10, 10, 10)
+                            .addComponent(labelSliceList, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(frameList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGap(20, 20, 20)
+                    .addGroup(framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(summButton, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(framesOptionsLayout.createSequentialGroup()
+                            .addGap(10, 10, 10)
+                            .addGroup(framesOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(summ1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(summ2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGap(0, 0, Short.MAX_VALUE)))
+        );
+
+        rightButtonsPanel.add(framesOptions);
+
+        seriesChoice.setLayout(new java.awt.GridLayout(4, 1));
+
+        saveSummsButton.setText("Sauvegarder toutes les images sommées");
+        saveSummsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveSummsButtonActionPerformed(evt);
+            }
+        });
+        seriesChoice.add(saveSummsButton);
+
+        radioButtonDyn1.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
+        radioButtonDyn1.setText("Serie Dynamique de départ");
+        radioButtonDyn1.setEnabled(false);
+        radioButtonDyn1.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                radioButtonDyn1StateChanged(evt);
+            }
+        });
+        radioButtonDyn1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                radioButtonDyn1ActionPerformed(evt);
+            }
+        });
+        seriesChoice.add(radioButtonDyn1);
+
+        radioButtonStat.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
+        radioButtonStat.setText("Série Statique");
+        radioButtonStat.setEnabled(false);
+        radioButtonStat.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                radioButtonStatStateChanged(evt);
+            }
+        });
+        radioButtonStat.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                radioButtonStatActionPerformed(evt);
+            }
+        });
+        seriesChoice.add(radioButtonStat);
+
+        radioButtonDyn2.setFont(new java.awt.Font("Tahoma", 1, 13)); // NOI18N
+        radioButtonDyn2.setText("Série Dynamique de fin");
+        radioButtonDyn2.setEnabled(false);
+        radioButtonDyn2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                radioButtonDyn2ActionPerformed(evt);
+            }
+        });
+        seriesChoice.add(radioButtonDyn2);
+
+        rightButtonsPanel.add(seriesChoice);
+
+        getContentPane().add(rightButtonsPanel, java.awt.BorderLayout.EAST);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -855,8 +916,19 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
      * @param b BufferedImage à afficher
      */
     private static void displayImage(BufferedImage b) {
+        //On mets à jour la taille
+        if (imagePanel.getWidth() != 0 && imagePanel.getHeight() != 0) {
+            IMAGE_WIDTH = imagePanel.getWidth()*3/4;
+            IMAGE_HEIGHT = imagePanel.getHeight()*3/4;
+            
+            if (IMAGE_WIDTH > IMAGE_HEIGHT)
+                IMAGE_WIDTH = IMAGE_HEIGHT;
+            else 
+                IMAGE_HEIGHT = IMAGE_WIDTH;
+        }
+        
        //On redimensionne l'image
-        BufferedImage bufferedImage = rescale(b, IMAGE_SIZE, IMAGE_SIZE);
+        BufferedImage bufferedImage = rescale(b, IMAGE_WIDTH, IMAGE_HEIGHT);
         
        
         
@@ -884,7 +956,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         
        
        //On redimensionne l'image
-        BufferedImage bufferedImage = rescale(b, IMAGE_SIZE, IMAGE_SIZE);
+        BufferedImage bufferedImage = rescale(b, IMAGE_WIDTH, IMAGE_HEIGHT);
         
        
         
@@ -1076,6 +1148,7 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
         
         this.revalidate();
        
+        display(currentImageID);
     }
     
     public static void setDisplayedImage(BufferedImage[] buffs, String title) {
@@ -1109,10 +1182,10 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     private static Roi adjustRoi(Roi roi) {
         //On ajuste la ROI à l'image initiale
         Polygon p = roi.getPolygon();
-        int startX = p.xpoints[0]*width/PatientSerieViewer.IMAGE_SIZE;
-        int endX = p.xpoints[1]*width/PatientSerieViewer.IMAGE_SIZE;
-        int startY = p.ypoints[0]*height/PatientSerieViewer.IMAGE_SIZE;
-        int endY = p.ypoints[2]*height/PatientSerieViewer.IMAGE_SIZE;
+        int startX = p.xpoints[0]*width/PatientSerieViewer.IMAGE_WIDTH;
+        int endX = p.xpoints[1]*width/PatientSerieViewer.IMAGE_WIDTH;
+        int startY = p.ypoints[0]*height/PatientSerieViewer.IMAGE_HEIGHT;
+        int endY = p.ypoints[2]*height/PatientSerieViewer.IMAGE_HEIGHT;
 
         Roi roiResult = new Roi(startX, startY, endX-startX, endY-startY);
         return roiResult;
@@ -1120,13 +1193,16 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel LeftButtonsPanel;
     private static javax.swing.JTextField acquisitionTimeTextField;
+    private javax.swing.JPanel allImagePanel;
     private javax.swing.JMenuItem applyLUT;
-    private javax.swing.JButton continueButton;
+    private javax.swing.JPanel changeImage;
     private static javax.swing.JComboBox frameList;
+    private javax.swing.JPanel framesOptions;
     private static javax.swing.JTextField imageIDTextField;
     private javax.swing.JPanel imageOptionsPanel;
-    private javax.swing.JPanel imagePanel;
+    private static javax.swing.JPanel imagePanel;
     private static javax.swing.JSlider imageSlider;
     private static javax.swing.JTextField imageTitle;
     private javax.swing.JLabel jLabel4;
@@ -1139,14 +1215,18 @@ public class PatientSerieViewer extends javax.swing.JInternalFrame {
     private javax.swing.JRadioButton radioButtonDyn1;
     private javax.swing.JRadioButton radioButtonDyn2;
     private javax.swing.JRadioButton radioButtonStat;
+    private javax.swing.JPanel rightButtonsPanel;
     private javax.swing.JMenuItem saveImages;
     private javax.swing.JButton saveSummsButton;
     private javax.swing.JButton selectAorta;
+    private javax.swing.JPanel seriesChoice;
     private javax.swing.JSlider sliderMax;
     private javax.swing.JSlider sliderMin;
+    private javax.swing.JPanel sliders;
     private javax.swing.JComboBox summ1;
     private javax.swing.JComboBox summ2;
     private javax.swing.JToggleButton summButton;
+    private javax.swing.JPanel tempsAcq;
     private javax.swing.JButton tridimObsButton;
     // End of variables declaration//GEN-END:variables
 

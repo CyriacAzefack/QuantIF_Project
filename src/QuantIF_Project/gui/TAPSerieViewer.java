@@ -5,10 +5,8 @@
  */
 package QuantIF_Project.gui;
 
-import QuantIF_Project.serie.DicomImage;
 import QuantIF_Project.patient.PatientMultiSeries;
 import QuantIF_Project.patient.exceptions.BadParametersException;
-import QuantIF_Project.serie.Block;
 import QuantIF_Project.serie.TAPSerie;
 import QuantIF_Project.utils.DicomUtils;
 import ij.ImagePlus;
@@ -26,8 +24,6 @@ import java.awt.Image;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JInternalFrame;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
@@ -70,10 +66,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     
     
     
-    /**
-     * LUT en cours
-     */
-    private LUT currentLUT;
+    
     
     /**
      * Luminosité des images
@@ -106,7 +99,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     /**
      * Taille de l'image affichée
      */
-    private final static int IMAGE_SIZE = 600;
+    private static int IMAGE_SIZE;
     
     /**
      * Creates new form AfficherImages
@@ -155,20 +148,26 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     private void initComponents() {
 
         maskFileChooser = new javax.swing.JFileChooser();
+        leftButtons = new javax.swing.JPanel();
+        tridimObsButton = new javax.swing.JButton();
+        prevTEPSerieButton = new javax.swing.JToggleButton();
+        rightButtons = new javax.swing.JPanel();
+        slidersMinMax = new javax.swing.JPanel();
+        sliderMin = new javax.swing.JSlider();
+        sliderMax = new javax.swing.JSlider();
+        chooseBodyBlockButton = new javax.swing.JButton();
+        allImage = new javax.swing.JPanel();
+        imageOptions = new javax.swing.JPanel();
+        imageIDTextField = new javax.swing.JTextField();
+        tempsAcq = new javax.swing.JPanel();
+        jLabel4 = new javax.swing.JLabel();
+        acquisitionTimeTextField = new javax.swing.JTextField();
+        changeImageButtons = new javax.swing.JPanel();
         nextButton = new javax.swing.JButton();
         prevButton = new javax.swing.JButton();
         imageSlider = new javax.swing.JSlider();
-        imageIDTextField = new javax.swing.JTextField();
+        imagePanel = new javax.swing.JPanel();
         tapImageLabel = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        acquisitionTimeTextField = new javax.swing.JTextField();
-        jLabel5 = new javax.swing.JLabel();
-        sliderMax = new javax.swing.JSlider();
-        sliderMin = new javax.swing.JSlider();
-        jLabel7 = new javax.swing.JLabel();
-        tridimObsButton = new javax.swing.JButton();
-        chooseBodyBlockButton = new javax.swing.JButton();
-        prevTEPSerieButton = new javax.swing.JToggleButton();
 
         maskFileChooser.setDialogTitle("Choisir le dossier du masque");
         maskFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -184,7 +183,110 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
             e1.printStackTrace();
         }
         setVisible(true);
-        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().setLayout(new java.awt.BorderLayout(50, 0));
+
+        leftButtons.setLayout(new java.awt.GridLayout(5, 2, 50, 50));
+
+        tridimObsButton.setText("Observation 3D");
+        tridimObsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                tridimObsButtonActionPerformed(evt);
+            }
+        });
+        leftButtons.add(tridimObsButton);
+
+        prevTEPSerieButton.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        prevTEPSerieButton.setText("<html>Prévisualisation série TEP de départ </html>");
+        prevTEPSerieButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                prevTEPSerieButtonActionPerformed(evt);
+            }
+        });
+        leftButtons.add(prevTEPSerieButton);
+
+        getContentPane().add(leftButtons, java.awt.BorderLayout.WEST);
+
+        rightButtons.setLayout(new java.awt.GridLayout(8, 1));
+
+        slidersMinMax.setLayout(new java.awt.GridLayout(2, 1));
+
+        sliderMin.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        sliderMin.setMaximum(100000);
+        sliderMin.setSnapToTicks(true);
+        sliderMin.setBorder(javax.swing.BorderFactory.createTitledBorder("Min"));
+        sliderMin.setValueIsAdjusting(true);
+        sliderMin.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                sliderMinStateChanged(evt);
+            }
+        });
+        slidersMinMax.add(sliderMin);
+
+        sliderMax.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        sliderMax.setMaximum(100000);
+        sliderMax.setMinorTickSpacing(1);
+        sliderMax.setPaintLabels(true);
+        sliderMax.setSnapToTicks(true);
+        sliderMax.setToolTipText("");
+        sliderMax.setValue(5);
+        sliderMax.setBorder(javax.swing.BorderFactory.createTitledBorder("Max"));
+        sliderMax.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        sliderMax.setValueIsAdjusting(true);
+        sliderMax.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                sliderMaxStateChanged(evt);
+            }
+        });
+        slidersMinMax.add(sliderMax);
+
+        rightButtons.add(slidersMinMax);
+
+        chooseBodyBlockButton.setFont(new java.awt.Font("Lucida Console", 1, 12)); // NOI18N
+        chooseBodyBlockButton.setText("CHOISIR CETTE COUPE CORPORELLE");
+        chooseBodyBlockButton.setBorder(javax.swing.BorderFactory.createCompoundBorder());
+        chooseBodyBlockButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chooseBodyBlockButtonActionPerformed(evt);
+            }
+        });
+        rightButtons.add(chooseBodyBlockButton);
+
+        getContentPane().add(rightButtons, java.awt.BorderLayout.EAST);
+
+        allImage.setLayout(new java.awt.BorderLayout());
+
+        imageOptions.setLayout(new java.awt.BorderLayout());
+
+        imageIDTextField.setEditable(false);
+        imageIDTextField.setBackground(new java.awt.Color(204, 255, 255));
+        imageIDTextField.setFont(new java.awt.Font("sansserif", 1, 14)); // NOI18N
+        imageIDTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        imageIDTextField.setText("               ");
+        imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                imageIDTextFieldActionPerformed(evt);
+            }
+        });
+        imageOptions.add(imageIDTextField, java.awt.BorderLayout.NORTH);
+
+        tempsAcq.setLayout(new javax.swing.BoxLayout(tempsAcq, javax.swing.BoxLayout.LINE_AXIS));
+
+        jLabel4.setText("Temps d'acquisition (secondes)");
+        tempsAcq.add(jLabel4);
+
+        acquisitionTimeTextField.setEditable(false);
+        acquisitionTimeTextField.setBackground(new java.awt.Color(204, 255, 255));
+        acquisitionTimeTextField.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
+        acquisitionTimeTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                acquisitionTimeTextFieldActionPerformed(evt);
+            }
+        });
+        tempsAcq.add(acquisitionTimeTextField);
+
+        imageOptions.add(tempsAcq, java.awt.BorderLayout.SOUTH);
+
+        changeImageButtons.setLayout(new java.awt.BorderLayout());
 
         nextButton.setText(">>");
         nextButton.addActionListener(new java.awt.event.ActionListener() {
@@ -192,7 +294,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 nextButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(nextButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(840, 610, 50, 40));
+        changeImageButtons.add(nextButton, java.awt.BorderLayout.EAST);
 
         prevButton.setText("<<");
         prevButton.addActionListener(new java.awt.event.ActionListener() {
@@ -200,7 +302,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 prevButtonActionPerformed(evt);
             }
         });
-        getContentPane().add(prevButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 610, 50, 40));
+        changeImageButtons.add(prevButton, java.awt.BorderLayout.WEST);
 
         imageSlider.setPaintLabels(true);
         imageSlider.setPaintTicks(true);
@@ -213,104 +315,27 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
                 imageSliderStateChanged(evt);
             }
         });
-        getContentPane().add(imageSlider, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 670, 550, 50));
+        changeImageButtons.add(imageSlider, java.awt.BorderLayout.CENTER);
 
-        imageIDTextField.setEditable(false);
-        imageIDTextField.setBackground(new java.awt.Color(204, 255, 255));
-        imageIDTextField.setFont(new java.awt.Font("sansserif", 1, 14)); // NOI18N
-        imageIDTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        imageIDTextField.setText("               ");
-        imageIDTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                imageIDTextFieldActionPerformed(evt);
-            }
-        });
-        getContentPane().add(imageIDTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 610, 100, 40));
+        imageOptions.add(changeImageButtons, java.awt.BorderLayout.CENTER);
 
-        tapImageLabel.setMaximumSize(new java.awt.Dimension(700, 700));
-        tapImageLabel.setMinimumSize(new java.awt.Dimension(512, 512));
+        allImage.add(imageOptions, java.awt.BorderLayout.SOUTH);
+
+        imagePanel.setLayout(new java.awt.GridBagLayout());
+
+        tapImageLabel.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 51, 255), 2));
+        tapImageLabel.setMaximumSize(null);
+        tapImageLabel.setMinimumSize(null);
         tapImageLabel.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
             public void mouseWheelMoved(java.awt.event.MouseWheelEvent evt) {
                 tapImageLabelMouseWheelMoved(evt);
             }
         });
-        getContentPane().add(tapImageLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 10, 600, 600));
+        imagePanel.add(tapImageLabel, new java.awt.GridBagConstraints());
 
-        jLabel4.setText("Temps d'acquisition (secondes)");
-        getContentPane().add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 730, -1, -1));
+        allImage.add(imagePanel, java.awt.BorderLayout.CENTER);
 
-        acquisitionTimeTextField.setEditable(false);
-        acquisitionTimeTextField.setBackground(new java.awt.Color(204, 255, 255));
-        acquisitionTimeTextField.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
-        acquisitionTimeTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                acquisitionTimeTextFieldActionPerformed(evt);
-            }
-        });
-        getContentPane().add(acquisitionTimeTextField, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 720, 60, 30));
-
-        jLabel5.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        jLabel5.setText("Max");
-        getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 30, -1, -1));
-
-        sliderMax.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        sliderMax.setMaximum(100000);
-        sliderMax.setMinorTickSpacing(1);
-        sliderMax.setPaintLabels(true);
-        sliderMax.setSnapToTicks(true);
-        sliderMax.setToolTipText("");
-        sliderMax.setValue(5);
-        sliderMax.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        sliderMax.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        sliderMax.setValueIsAdjusting(true);
-        sliderMax.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                sliderMaxStateChanged(evt);
-            }
-        });
-        getContentPane().add(sliderMax, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 10, 400, 50));
-
-        sliderMin.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        sliderMin.setMaximum(100000);
-        sliderMin.setSnapToTicks(true);
-        sliderMin.setValueIsAdjusting(true);
-        sliderMin.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                sliderMinStateChanged(evt);
-            }
-        });
-        getContentPane().add(sliderMin, new org.netbeans.lib.awtextra.AbsoluteConstraints(1200, 70, 400, 40));
-
-        jLabel7.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        jLabel7.setText("Min");
-        getContentPane().add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(1060, 70, -1, 30));
-
-        tridimObsButton.setText("Observation 3D");
-        tridimObsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tridimObsButtonActionPerformed(evt);
-            }
-        });
-        getContentPane().add(tridimObsButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 260, 170, 60));
-
-        chooseBodyBlockButton.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
-        chooseBodyBlockButton.setText("CHOISIR CETTE COUPE CORPORELLE");
-        chooseBodyBlockButton.setBorder(javax.swing.BorderFactory.createCompoundBorder());
-        chooseBodyBlockButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                chooseBodyBlockButtonActionPerformed(evt);
-            }
-        });
-        getContentPane().add(chooseBodyBlockButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(1050, 150, 280, 80));
-
-        prevTEPSerieButton.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
-        prevTEPSerieButton.setText("<html>Prévisualisation série TEP de départ </html>");
-        prevTEPSerieButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                prevTEPSerieButtonActionPerformed(evt);
-            }
-        });
-        getContentPane().add(prevTEPSerieButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 190, 150, 60));
+        getContentPane().add(allImage, java.awt.BorderLayout.CENTER);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -354,7 +379,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
 
     private void sliderMaxStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMaxStateChanged
         this.maxBrightness = this.sliderMax.getValue();
-        this.currentLUT.max = this.sliderMax.getValue();
+        
         display(this.currentImageID);
     }//GEN-LAST:event_sliderMaxStateChanged
 
@@ -364,7 +389,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
 
     private void sliderMinStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderMinStateChanged
         this.minBrightness = this.sliderMin.getValue();
-         this.currentLUT.min = this.sliderMin.getValue();
+         
         display(this.currentImageID);
     }//GEN-LAST:event_sliderMinStateChanged
 
@@ -437,7 +462,21 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         BufferedImage bufferedImage;
         
         bufferedImage = this.displayedImages[imageID];
-          
+        
+        int w = imagePanel.getWidth();
+        int h = imagePanel.getHeight();
+        
+        if (w != 0 && h != 0) {
+            if (w < h)
+                IMAGE_SIZE = w*3/4;
+            else
+                IMAGE_SIZE = h*3/4;
+            
+        }
+        else {
+            IMAGE_SIZE = 600;
+        }
+           
         //On redimensionne l'image
         bufferedImage = rescale(bufferedImage, IMAGE_SIZE, IMAGE_SIZE);
         
@@ -525,19 +564,25 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField acquisitionTimeTextField;
+    private javax.swing.JPanel allImage;
+    private javax.swing.JPanel changeImageButtons;
     private javax.swing.JButton chooseBodyBlockButton;
     private javax.swing.JTextField imageIDTextField;
+    private javax.swing.JPanel imageOptions;
+    private javax.swing.JPanel imagePanel;
     private javax.swing.JSlider imageSlider;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel7;
+    private javax.swing.JPanel leftButtons;
     private javax.swing.JFileChooser maskFileChooser;
     private javax.swing.JButton nextButton;
     private javax.swing.JButton prevButton;
     private javax.swing.JToggleButton prevTEPSerieButton;
+    private javax.swing.JPanel rightButtons;
     private javax.swing.JSlider sliderMax;
     private javax.swing.JSlider sliderMin;
+    private javax.swing.JPanel slidersMinMax;
     private javax.swing.JLabel tapImageLabel;
+    private javax.swing.JPanel tempsAcq;
     private javax.swing.JButton tridimObsButton;
     // End of variables declaration//GEN-END:variables
     
@@ -578,7 +623,7 @@ public class TAPSerieViewer extends javax.swing.JInternalFrame {
         
         
         
-        this.currentLUT = LutLoader.openLut("luts\\Red Hot.lut");
+        
         
         
         
