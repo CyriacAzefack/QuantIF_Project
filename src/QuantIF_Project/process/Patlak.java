@@ -99,7 +99,7 @@ public class Patlak {
         
         
         
-        String aortaResultsPath = "tmp\\aortaResults";
+        String aortaResultsPath = Main_Window.outputDir()+"aortaResults";
         ResultsTable rt = ResultsTable.open2(aortaResultsPath+"\\resultsTable");
         
         patientMultiSeries.loadAortaResult(aortaResultsPath);
